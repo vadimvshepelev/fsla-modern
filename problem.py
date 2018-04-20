@@ -1,8 +1,8 @@
 class CProblem:
-    def __init__(self, GAMMA, dir, ro_l, u_l, p_l, ro_r, u_r, p_r, x_0, t_max):
+    def __init__(self, eos, dir, ro_l, u_l, p_l, ro_r, u_r, p_r, x_0, t_max):
         """Конструктор одномерной задачи о распаде разрыва в 3D"""
-        print("CProblem.__init__():", end="")
-        print(" Initializing one-dimensional desintegration of the discontinuity problem...", end="")
+        print("Class CProblem: ", end="")
+        print("Initializing one-dimensional desintegration of the discontinuity problem...", end="")
         self.direction = dir
         self.ro_l = ro_l
         self.u_l = u_l		
@@ -12,13 +12,9 @@ class CProblem:
         self.p_r = p_r
         self.x_0 = x_0
         self.t_max = t_max
-        self.GAMMA = eos_ideal["GAMMA"]
+        self.GAMMA = eos.GAMMA
         print("done!")
 
-eos_ideal = {
-	"GAMMA":1.4,
-}	
-	
 toro_test_1_x = {
 	"direction":'x',	
     "ro_l":1., "u_l":.75, "p_l":1., 
