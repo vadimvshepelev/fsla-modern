@@ -16,8 +16,6 @@ eos_ideal = eos.EOSIdeal(1.4)
 problem_toro_test_1_x = problem.CProblem(eos_ideal, *problem.toro_test_1_x)
 exact_solver = exc.CExactRiemannSolver(eos_ideal)
 
-
-
 flux = exact_solver.calc_flux(0., 0.)
 
 
