@@ -4,8 +4,9 @@ import config as cfg
 import problem as problem
 import solver.exact as exc
 import eos.ideal as eos
+import field as field
 
-print("FSLA hydrocode v.0.1")
+print("FSLA eulerian 3D hydrocode v.0.1")
 
 U = np.zeros((cfg.N_X+2*cfg.const["N_GHOST_CELLS"], 
               cfg.N_Y+2*cfg.const["N_GHOST_CELLS"], 
