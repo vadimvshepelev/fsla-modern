@@ -5,18 +5,22 @@ import problem as problem
 import solver.exact as exc
 import eos.ideal as eos
 import field as field
+import app as app
 
 print("FSLA eulerian 3D hydrocode v.0.1")
 
-U = np.zeros((cfg.N_X+2*cfg.const["N_GHOST_CELLS"], 
-              cfg.N_Y+2*cfg.const["N_GHOST_CELLS"], 
-			  cfg.N_Z+2*cfg.const["N_GHOST_CELLS"], 
-			  cfg.const["CONS_VECT_N_SIZE"]))		  
-			  
-eos_ideal = eos.EOSIdeal(1.4)
-problem_toro_test_1_x = problem.CProblem(eos_ideal, *problem.toro_test_1_x)
-exact_solver = exc.CExactRiemannSolver(eos_ideal)
+eos = eos.EOSIdeal(GAMMA=1.4)
+problem = problem.CProblem(eos, *problem.toro_test_1_x)	
+print(problem)
+		  
+field = field.CField(problem, NX=10, NY=10, NZ=10)
+print(field.x_mesh, field.y_mesh, field.z_mesh)
 
-flux = exact_solver.calc_flux(0., 0.)
+solver = exc.CExactRiemannSolver(eos)
+app = app.CApp(problem, eos, field, solver)
+app.run()
+
+
+flux = solver.calc_flux(0., 0.)
 
 
