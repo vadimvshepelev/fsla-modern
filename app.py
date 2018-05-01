@@ -1,7 +1,9 @@
+# 'app.py' module, CApp class implementation
+
 class CApp:
     """Implements the whole calculation process"""
     def __init__(self, problem, eos, field, solver):
-        print("Class CApp: Initializing numerical experimnet process...", end="")        
+        print("Class CApp: Initializing numerical experiment process...", end="")        
         self.problem = problem
         self.eos = eos
         self.field = field
@@ -11,4 +13,4 @@ class CApp:
 
     def run(self):
         print("Starting computational process...")	
-        self.field.set(self.problem, self.eos)
+        
