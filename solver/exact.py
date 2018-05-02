@@ -4,18 +4,30 @@ import config as cfg
 
 class CVectorPrimitive1D:
     """Primitive variables vector for 1D equations"""
-    def __init__(self, ro=None, u=None, p=None):
-        self.ro=ro
-        self.u=u
-        self.p=p
+    def __init__(self, ro=None, u=None, v=None, w=None, p=None):
+        self.ro = ro
+        self.u = u        
+        self.p = p
+
+        
+class CVectorPrimitive3D:
+    """Primitive variables vector for 1D equations"""
+    def __init__(self, ro=None, u_des=None, u_adv_1=None, u_adv_2=None, p=None):
+        self.ro = ro
+        self.u_des = u_des
+        self.u_adv_1 = u_adv_1
+        self.u_adv_2 = u_adv_1
+        self.p = p
         
 
-class CRPSolutionPrimitive1D:
-    """Riemznn problem solution vector for 1D equations"""
-    def __init__(self, ro_l=None, ro_r=None, u=None, p=None, s_type=None):
+class CRPSolutionPrimitive3D:
+    """Riemann problem solution vector for 1D equations"""
+    def __init__(self, ro_l=None, ro_r=None, u=None, v=None, w=None, p=None, s_type=None):
         self.ro_l = ro_l
         self.ro_r = ro_r
         self.u = u
+        self.v = v
+        sefl.w = w
         self.p = p
         self.s_type = ""
         
@@ -27,28 +39,6 @@ class CExactRiemannSolver:
         self.eos = eos
         self.CONS_VECT_N_SIZE = cfg.const['CONS_VECT_N_SIZE']
         print("done!")
-	
-    def calc_fluxes(self, U_l, U_r):
-        """Calculates intercell flux based on exact Riemann problem solution"""
-        ro_l = U_l[0]
-        u_l = U_l[1]/ro_l
-        v_l = U_l[2]/ro_l
-        w_l = U_l[3]/ro_l
-        E_l = U_l[4]/ro_l
-        e_l = E_l - .5*(u_l*u_l + v_l*v_l + w_l*w_l)
-        p_l = eos.getp(ro_l, e_l)
-        ro_r = U_r[0]
-        u_r = U_r[1]/ro_r
-        v_r = U_r[2]/ro_r
-        w_r = U_r[3]/ro_r
-        E_r = U_r[4]/ro_r
-        e_r = E_r - .5*(u_r*u_r + v_r*v_r + w_r*w_r)
-        p_r = eos.getp(ro_r, e_r)
-        F = np.zeros(CONS_VECT_N_SIZE)
-        G = np.zeros(CONS_VECT_N_SIZE)
-        H = np.zeros(CONS_VECT_N_SIZE)        
-        RP_solution = calc_RP_solution(ro_l, u_l, p_l, ro_r, u_r, p_r, 0., .01)        
-        return (F,G,H)
 	    
     def calc_F(self, U_l, U_r):
         """Calculates F intercell flux based on Riemann problem solution in X direction"""
@@ -66,6 +56,13 @@ class CExactRiemannSolver:
         E_r = U_r[4]/ro_r
         e_r = E_r - .5*(u_r*u_r + v_r*v_r + w_r*w_r)
         p_r = eos.getp(ro_r, e_r)
+        res = calc_RP_solution(ro_l, u_l, v_l, w_l, ro_r, u_r, v_r, w_r, 0., .001)
+        E = eos.gete(res.ro, res.p) + .5*(res.u_des*res.u_des + res.u_adv_1*res.u_adv_1 + res.u_adv_2*res.u_adv_2) 
+        return [res.ro, 
+                res.p + res.ro*res.u_des*res.u_des, 
+                res.ro*res.u_des*res.u_adv_1,
+                res.ro*res.u_des*res.u_adv_2,
+                res.u_des*(res.p * res.ro*E)]     
         
     def calc_G(self, U_l, U_r):    
         """Calculates G intercell flux based on Riemann problem solution in Y direction"""
@@ -82,7 +79,14 @@ class CExactRiemannSolver:
         w_r = U_r[3]/ro_r
         E_r = U_r[4]/ro_r
         e_r = E_r - .5*(u_r*u_r + v_r*v_r + w_r*w_r)
-        p_r = eos.getp(ro_r, e_r)
+        p_r = eos.getp(ro_r, e_r)        
+        res = calc_RP_solution(ro_l, v_l, w_l, u_l, ro_r, v_r, w_r, u_r, 0., .001)
+        E = eos.gete(res.ro, res.p) + .5*(res.u_adv_1*res.u_adv_1 + res.u_des*res.u_des + res.u_adv_2*res.u_adv_2) 
+        return [res.ro,
+                res.ro*res.u_adv_1*res.u_des,
+                res.p + res.ro*res.u_des*res.u_des,                
+                res.ro*res.u_des*res.u_adv_2,
+                res.u_des*(res.p * res.ro*E)]
         
     def calc_H(self, U_l, U_r):    
         """Calculates H intercell flux based on Riemann problem solution in Z direction"""    
@@ -100,12 +104,19 @@ class CExactRiemannSolver:
         E_r = U_r[4]/ro_r
         e_r = E_r - .5*(u_r*u_r + v_r*v_r + w_r*w_r)
         p_r = eos.getp(ro_r, e_r)
+        res = calc_RP_solution(ro_l, w_l, u_l, v_l, ro_r, w_r, u_r, v_r, 0., .001)
+        E = eos.gete(res.ro, res.p) + .5*(res.u_adv_1*res.u_adv_1 + res.u_adv_2*res.u_adv_2 + res.u_des*res.u_des) 
+        return [res.ro,
+                res.ro*res.u_adv_1*res.u_des,
+                res.ro*res.u_adv_2*res.u_des,
+                res.p + res.ro*res.u_des*res.u_des,                                
+                res.u_des*(res.p * res.ro*E)]
         
-    def calc_RP_solution(self, ro_l, u_l, p_l, ro_r, u_r, p_r, x, t):
+    def calc_RP_solution(self, ro_l, u_des_l, u_adv_1_l, u_adv_2_l, p_l, ro_r, u_des_r, u_adv_1_r, u_adv_2_r, p_r, x, t):
         GAMMA = eos.GAMMA
-        res = solve_rp(ro_l, u_l, p_l, ro_r, u_r, p_r)
-         #	// V = (ro, v, p)T
-        V = CVectorPrimitive()
+        res = solve_rp(ro_l, u_des_l, p_l, ro_r, u_des_r, p_r)
+         #	// V = (ro, u, v, w, p)T
+        V = CVectorPrimitive3D()
         if t!=0:
             xi = x/t
         else:
@@ -118,120 +129,138 @@ class CExactRiemannSolver:
             c_r = sqrt(GAMMA*p_r/ro_r)
         #	// Vacuum
         if res.s_type == "VacRW":
-            xi_head = u_r + c_r
-            xi_tail = u_r - 2.*c_r/(GAMMA-1.)
+            V.u_adv_1 = u_adv_1_r
+            V.u_adv_2 = u_adv_2_r
+            xi_head = u_des_r + c_r
+            xi_tail = u_des_r - 2.*c_r/(GAMMA-1.)
             if xi <= xi_tail:
                 V.ro = 0.
-                V.u = u_r - 2.*c_r/(GAMMA-1.)
+                V.u_des = u_des_r - 2.*c_r/(GAMMA-1.)
                 V.p = 0.
             elif xi < xi_head:
-                V.ro = ro_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_r-xi), 2./(GAMMA-1.))
-                V.u = 2./(GAMMA+1)*(-c_r + (GAMMA-1.)/2.*u_r + xi)
-                V.p = p_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_r-xi), 2.*GAMMA/(GAMMA-1.))
+                V.ro = ro_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_des_r-xi), 2./(GAMMA-1.))
+                V.u_des = 2./(GAMMA+1)*(-c_r + (GAMMA-1.)/2.*u_des_r + xi)
+                V.p = p_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_des_r-xi), 2.*GAMMA/(GAMMA-1.))
             else:
                 V.ro = ro_r
-                V.u = u_r
+                V.u_des = u_des_r
                 V.p = p_r
             return V
         if res.s_type == "RWVac":
-            xi_head = u_l - c_l
-            xi_tail = u_l + 2.*c_l/(GAMMA-1.)
+            V.u_adv_1 = u_adv_1_l
+            V.u_adv_2 = u_adv_2_l    
+            xi_head = u_des_l - c_l
+            xi_tail = u_des_l + 2.*c_l/(GAMMA-1.)
             if xi >= xi_tail:
                 V.ro = 0.
-                V.u = 0.
+                V.u_des = 0.
                 V.p = 0.
             elif xi > xi_head:
-                V.ro = ro_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_l-xi), 2./(GAMMA-1.))
-                V.u = 2./(GAMMA+1)*(c_l + (GAMMA-1.)/2.*u_l + xi)
-                V.p = p_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_l-xi), 2.*GAMMA/(GAMMA-1.))
+                V.ro = ro_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_des_l-xi), 2./(GAMMA-1.))
+                V.u_des = 2./(GAMMA+1)*(c_l + (GAMMA-1.)/2.*u_des_l + xi)
+                V.p = p_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_des_l-xi), 2.*GAMMA/(GAMMA-1.))
             else:
                 V.ro = ro_l
-                V.u = u_l
+                V.u_des = u_des_l
                 V.p = p_l
             return V
         if res.s_type == "RWVacRW":
-            xi_head_l = u_l - c_l
-            xi_tail_l = u_l + 2.*c_l/(GAMMA-1.)
-            xi_head_r = u_r + c_r
-            xi_tail_r = u_r - 2.*c_r/(GAMMA-1.)
+            xi_head_l = u_des_l - c_l
+            xi_tail_l = u_des_l + 2.*c_l/(GAMMA-1.)
+            xi_head_r = u_des_r + c_r
+            xi_tail_r = u_des_r - 2.*c_r/(GAMMA-1.)
             if xi <= xi_head_l:
                 V.ro = ro_l
-                V.u = u_l
+                V.u_des = u_des_l
+                V.u_adv_1 = u_adv_1_l;
+                V.u_adv_2 = u_adv_2_l;
                 V.p = p_l
             elif xi < xi_tail_l:
-                V.ro = ro_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_l-xi), 2./(GAMMA-1.))
-                V.u  = 2./(GAMMA+1)*(c_l + (GAMMA-1.)/2.*u_l + xi)
-                V.p  = p_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_l-xi), 2.*GAMMA/(GAMMA-1.))
+                V.ro = ro_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_des_l-xi), 2./(GAMMA-1.))
+                V.u_des  = 2./(GAMMA+1)*(c_l + (GAMMA-1.)/2.*u_des_l + xi)
+                V.u_adv_1 = u_adv_1_l;
+                V.u_adv_2 = u_adv_2_l;
+                V.p  = p_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_des_l-xi), 2.*GAMMA/(GAMMA-1.))
             elif xi <= xi_tail_r:
                 V.ro = 0.
-                V.u = 0.
+                V.u_des = 0.
+                V.u_adv_1 = 0.;
+                V.u_adv_2 = 0.;
                 V.p = 0.
             elif xi < xi_head_r:
-                V.ro = ro_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_r-xi), 2./(GAMMA-1.))
-                V.u = 2./(GAMMA+1)*(-c_r + (GAMMA-1.)/2.*c_r + xi)
-                V.p = p_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_r-xi), 2.*GAMMA/(GAMMA-1.))
+                V.ro = ro_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_des_r-xi), 2./(GAMMA-1.))
+                V.u_des = 2./(GAMMA+1)*(-c_r + (GAMMA-1.)/2.*c_r + xi)
+                V.u_adv_1 = u_adv_1_r;
+                V.u_adv_2 = u_adv_2_r;
+                V.p = p_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_des_r-xi), 2.*GAMMA/(GAMMA-1.))
             else:
                 V.ro = ro_r
-                V.u = u_r
+                V.u_des = u_des_r
+                V.u_adv_1 = u_adv_1_r;
+                V.u_adv_2 = u_adv_2_r;
                 V.p = p_r
             return V
         c_l_local = sqrt(GAMMA*res.p/res.ro_l)
         c_r_local = sqrt(GAMMA*res.p/res.ro_r)
         #	// If non-vacuum zone -- let the point be to the left from the contact gap (xiContact = res.v)
-        if xi < res.u:
+        if xi < res.u_des:
+            V.u_adv_1 = u_adv_1_l;
+            V.u_adv_2 = u_adv_2_l;
             if res.s_type == "SWSW" or res.s_type == "SWRW":
-                xi_front = u_l - c_l*sqrt((GAMMA+1.)/2./GAMMA*res.p/p_l + (GAMMA-1.)/2./GAMMA)
+                xi_front = u_des_l - c_l*sqrt((GAMMA+1.)/2./GAMMA*res.p/p_l + (GAMMA-1.)/2./GAMMA)
                 if xi < xi_front:
                     V.ro = ro_l
-                    V.u = u_l
+                    V.u_des = u_des_l
                     V.p = p_l
                 else:
                     V.ro = res.ro_l
-                    V.u = res.u
+                    V.u_des = res.u_des
                     V.p = res.p
             elif res.s_type == "RWSW" or res.s_type == "RWRW":
-                xi_head = u_l - c_l
-                xi_tail = res.u - c_l_local
+                xi_head = u_des_l - c_l
+                xi_tail = res.u_des - c_l_local
                 if xi <= xi_head:
                     V.ro = ro_l
-                    V.u = u_l
+                    V.u_des = u_des_l
                     V.p = p_l
                 elif xi >= xi_tail:
                     V.ro = res.ro_l
-                    V.u = res.u
+                    V.u_des = res.u_des
                     V.p = res.p
                 else:
-                    V.ro = ro_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_l-xi), 2./(GAMMA-1.))
-                    V.u = 2./(GAMMA+1)*(c_l + (GAMMA-1.)/2.*u_l + xi)
-                    V.p = p_l * pow(2. / (GAMMA + 1.) + (GAMMA - 1.) / (GAMMA + 1.) / c_l * (u_l - xi),
+                    V.ro = ro_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_des_l-xi), 2./(GAMMA-1.))
+                    V.u_des = 2./(GAMMA+1)*(c_l + (GAMMA-1.)/2.*u_des_l + xi)
+                    V.p = p_l * pow(2. / (GAMMA + 1.) + (GAMMA - 1.) / (GAMMA + 1.) / c_l * (u_des_l - xi),
                                     2. * GAMMA / (GAMMA - 1.))
-            #	// Let point be to the right from the contact gap (xiContact = res.v)
+        # Let point be to the right from the contact gap (xiContact = res.v)
         else:
+            V.u_adv_1 = u_adv_1_r;
+            V.u_adv_2 = u_adv_2_r;
             if res.s_type == "RWSW" or res.s_type == "SWSW":
-                xi_front = u_r + c_r*sqrt((GAMMA+1.)/2./GAMMA*res.p/p_r + (GAMMA-1.)/2./GAMMA)
+                xi_front = u_des_r + c_r*sqrt((GAMMA+1.)/2./GAMMA*res.p/p_r + (GAMMA-1.)/2./GAMMA)
                 if xi > xi_front:
                     V.ro = ro_r
-                    V.u = u_r
+                    V.u_des = u_des_r
                     V.p = p_r
                 else:
                     V.ro = res.ro_r
-                    V.u = res.u
+                    V.u_des = res.u_des
                     V.p = res.p
             elif res.s_type == "RWRW" or res.s_type == "SWRW":
                 xi_head = u_r + c_r
-                xi_tail = res.u + c_r_local
+                xi_tail = res.u_des + c_r_local
                 if xi >= xi_head:
                     V.ro = ro_r
-                    V.u = u_r
+                    V.u_des = u_des_r
                     V.p = p_r
                 elif xi <= xi_tail:
                     V.ro = res.ro_r
-                    V.u = res.u
+                    V.u_des = res.u_des
                     V.p = res.p
                 else:
-                    V.ro = ro_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_r-xi), 2./(GAMMA-1.))
-                    V.u = 2./(GAMMA+1)*(-c_r + (GAMMA-1.)/2.*u_r + xi)
-                    V.p = p_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_r-xi), 2.*GAMMA/(GAMMA-1.))
+                    V.ro = ro_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_des_r-xi), 2./(GAMMA-1.))
+                    V.u_des = 2./(GAMMA+1)*(-c_r + (GAMMA-1.)/2.*u_des_r + xi)
+                    V.p = p_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_des_r-xi), 2.*GAMMA/(GAMMA-1.))
         return V    
     
     def solve_RP(self, ro_l, u_l, p_l, ro_r, u_r, p_r):	
