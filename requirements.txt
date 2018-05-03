@@ -1,2 +1,4 @@
 python==3.6.5
 numpy==1.14.2
+clint==0.5.1
+args==0.1.0 (dependency)

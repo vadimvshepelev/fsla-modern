@@ -1,5 +1,8 @@
 # 'app.py' module, CApp class implementation
 
+import sys, time
+from clint.textui import progress
+
 class CApp:
     """Implements the whole calculation process"""
     def __init__(self, problem, eos, field, solver):
@@ -13,14 +16,31 @@ class CApp:
         print("done!")
 
     def run(self):
-        self.field.write_file("test.dat", self.t)        
-        print("Starting computational process...")	        
-        counter = 0                     
+        self.field.write_file("test.dat", self.t)  
+        init_str = "Starting computational process..."
+        print(init_str, end="")	        
+        counter = 0     
+
+        #for i in progress.bar(range(10)):
+        #    time.sleep(.1)
+            
+        #with progress.Bar(label="Starting computational process...", expected_size=10) as bar:
+        #    last_val = 0
+        #    for val in (1,2,3,9,10):
+        #        time.sleep(2 * (val - last_val))
+        #        bar.show(val)
+        #        last_val = val
+               
         while(self.t < self.problem.t_max):
             self.tau = self.calc_time_step(self.field, self.problem)
-            print("%d: tau=%f t=%f CFL=%f" % (counter, self.tau, self.t, self.problem.CFL))
+            #sys.stderr.write("%d: tau=%f t=%f CFL=%f \r" % (counter, self.tau, self.t, self.problem.CFL))
+            str_progress_bar = "[.......   ] 87% "
+            output_str = init_str + str_progress_bar + "%d: tau=%f t=%f CFL=%f \r" % (counter, self.tau, self.t, self.problem.CFL)
+            sys.stderr.write(output_str)
+            time.sleep(1.)
             self.t += self.tau
             counter += 1        
+        print(output_str[:-1], end="")    
         print("...done!")
         self.field.write_file("test.dat", self.t)        
     
