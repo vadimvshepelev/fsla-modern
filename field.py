@@ -9,46 +9,47 @@ class CField:
     """Implements full mesh function type: conservative variables vector, setting initial and boundary conditions etc."""
     def __init__(self, problem, eos, NX, NY, NZ):
         print("Class CField: Initializing 3D-mesh function, setting i.c.s and b.c.s...", end="")
-        self.U = np.zeros((NX+2*cfg.const["N_GHOST_CELLS"], NY+2*cfg.const["N_GHOST_CELLS"], NZ+2*cfg.const["N_GHOST_CELLS"],
-                      cfg.const["CONS_VECT_N_SIZE"]))	
-        self.NX = NX
-        self.NY = NY
-        self.NZ = NZ
-        dx = (problem.x_max-problem.x_min)/NX
-        print(dx)
-        self.x_mesh = np.linspace(problem.x_min - cfg.const["N_GHOST_CELLS"]*dx, problem.x_max + cfg.const["N_GHOST_CELLS"]*dx, 
+        self.U = np.zeros((NX+2*cfg.const["N_GHOST_CELLS"], 
+                           NY+2*cfg.const["N_GHOST_CELLS"], 
+                           NZ+2*cfg.const["N_GHOST_CELLS"],
+                           cfg.const["CONS_VECT_N_SIZE"]))	
+        self.U_new = np.copy(self.U)
+        self.dx = (problem.x_max-problem.x_min)/NX
+        self.x_mesh = np.linspace(problem.x_min - cfg.const["N_GHOST_CELLS"]*self.dx, 
+                                  problem.x_max + cfg.const["N_GHOST_CELLS"]*self.dx, 
                                   NX+1+2*cfg.const["N_GHOST_CELLS"])
-        dy = (problem.y_max-problem.y_min)/NY
-        self.y_mesh = np.linspace(problem.y_min - cfg.const["N_GHOST_CELLS"]*dy, problem.y_max + cfg.const["N_GHOST_CELLS"]*dy, 
+        self.dy = (problem.y_max-problem.y_min)/NY
+        self.y_mesh = np.linspace(problem.y_min - cfg.const["N_GHOST_CELLS"]*self.dy, 
+                                  problem.y_max + cfg.const["N_GHOST_CELLS"]*self.dy, 
                                   NY+1+2*cfg.const["N_GHOST_CELLS"])
-        dz = (problem.z_max-problem.z_min)/NZ
-        self.z_mesh = np.linspace(problem.z_min - cfg.const["N_GHOST_CELLS"]*dy, problem.z_max + cfg.const["N_GHOST_CELLS"]*dz, 
-                                  NZ+1+2*cfg.const["N_GHOST_CELLS"])        
+        self.dz = (problem.z_max-problem.z_min)/NZ
+        self.z_mesh = np.linspace(problem.z_min - cfg.const["N_GHOST_CELLS"]*self.dz, 
+                                  problem.z_max + cfg.const["N_GHOST_CELLS"]*self.dz, 
+                                  NZ+1+2*cfg.const["N_GHOST_CELLS"]) 
         self.i_min = cfg.const["N_GHOST_CELLS"]
         self.j_min = cfg.const["N_GHOST_CELLS"]
         self.k_min = cfg.const["N_GHOST_CELLS"]
         self.i_max = self.i_min + NX
         self.j_max = self.j_min + NY
-        self.k_max = self.k_min + NZ
+        self.k_max = self.k_min + NZ		
         self.set_ic(problem, eos)
         self.set_bc(problem)
         print("done!")
     
     def set_ic(self, problem, eos):    	
         """Sets initial conditions to the mesh function everywhere but ghost-cells boundary layers"""
-        i_min = cfg.const["N_GHOST_CELLS"]
-        j_min = cfg.const["N_GHOST_CELLS"]
-        k_min = cfg.const["N_GHOST_CELLS"]
-        i_max = i_min + self.NX
-        j_max = j_min + self.NY
-        k_max = k_min + self.NZ
+        i_min = self.i_min
+        j_min = self.j_min
+        k_min = self.k_min
+        i_max = self.i_max 
+        j_max = self.j_max
+        k_max = self.k_max
         ro_l = problem.ro_l
         ro_r = problem.ro_r
         u_l = problem.u_l
         u_r = problem.u_r
         p_l = problem.p_l
-        p_r = problem.p_r        
-        
+        p_r = problem.p_r                
         for i in range(i_min, i_max):
             for j in range(j_min, j_max):
                 for k in range(k_min, k_max):                    
@@ -109,11 +110,14 @@ class CField:
 
     def write_file(self, file_name, t):
         """Dumps mesh function to Tecplot data file for visualization"""
-        print("Function CField.write_file(): writing U field to file " + file_name + " at time t=", t, "...", end="") 
+        NX = self.i_max-self.i_min
+        NY = self.j_max-self.j_min
+        NZ = self.k_max-self.k_min
+        print("Function CField.write_file(): writing U field to file " + file_name + " at time t =", t, "...", end="") 
         f = open(cfg.const["OUTPUT_DIR"]+file_name, 'w')
         f.write('VARIABLES="X","Y","Z","ro","ro*u","ro*v","ro*w","ro*E"\n')
         f.write('TITLE="Conservative variables vector field t = ' + str(t) + '"\n')
-        f.write('ZONE T="Numerical", I=%d, J=%d, K=%d, F=POINT\n' % (self.NX, self.NY, self.NZ))
+        f.write('ZONE T="Numerical", I=%d, J=%d, K=%d, F=POINT\n' % (NX, NY, NZ))
         for i in range(self.i_min, self.i_max):
             for j in range(self.j_min, self.j_max):
                 for k in range(self.k_min, self.k_max):   

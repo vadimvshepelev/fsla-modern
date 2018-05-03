@@ -36,10 +36,43 @@ class CExactRiemannSolver:
     """Implements exact Riemann solver for 3D equations"""
     def __init__(self, eos):
         print("Class solver.CExactRiemannSolver: Initializing exact 3D Riemann solver...", end="")
-        self.eos = eos
-        self.CONS_VECT_N_SIZE = cfg.const['CONS_VECT_N_SIZE']
+        self.eos = eos        
         print("done!")
-	    
+        
+    def calc_step(self, field, problem, tau):
+        i_min = field.i_min
+        i_max = field.i_max     
+        j_min = field.j_min
+        j_max = field.j_max
+        k_min = field.k_min
+        k_max = field.k_max        
+        CONS_VECT_N_SIZE = cfg.const["CONS_VECT_N_SIZE"]
+        F = np.zeros(CONS_VECT_N_SIZE)
+        G = np.zeros(CONS_VECT_N_SIZE)
+        H = np.zeros(CONS_VECT_N_SIZE)
+        H = np.zeros(CONS_VECT_N_SIZE)
+        dx = field.dx
+        dy = field.dy
+        dz = field.dz
+        g = 0 # ускорение
+        for i in range(i_min, i_max):
+            for j in range(j_min, j_max):
+                for k in range(k_min, k_max):
+                    S = np.zeros(CONS_VECT_N_SIZE)
+                    F = calc_F(U[i-1][j][k], U[i][j][k])
+                    G = calc_G(U[i][j-1][k], U[i][j][k])
+                    H = calc_H(U[i][j][k-1], U[i][j][k])
+                    U_new[i][j][k] = U[i][j][k] - ( tau/dx*(F[i+1][j][k]-F[i][j][k]) -
+                                                    tau/dy*(G[i][j+1][k]-G[i][j][k]) -
+									                tau/dz*(H[i][j][k+1]-H[i][j][k]) ) + S*tau	
+        for i in range(i_min, i_max):
+            for j in range(j_min, j_max):
+                for k in range(k_min, k_max):
+                    U[i][j][k] = U_new[i][j][k] # Почему бы не сократить -- 
+												# U[i][j][k] -= tau/dx(...)+tau/dy(...)+tau/dz(...)
+					                            # Неудобство при реконструкции??? Только первый порядок? 
+        field.set_bc(problem)		
+
     def calc_F(self, U_l, U_r):
         """Calculates F intercell flux based on Riemann problem solution in X direction"""
         ro_l = U_l[0]
@@ -115,7 +148,7 @@ class CExactRiemannSolver:
     def calc_RP_solution(self, ro_l, u_des_l, u_adv_1_l, u_adv_2_l, p_l, ro_r, u_des_r, u_adv_1_r, u_adv_2_r, p_r, x, t):
         GAMMA = eos.GAMMA
         res = solve_rp(ro_l, u_des_l, p_l, ro_r, u_des_r, p_r)
-         #	// V = (ro, u, v, w, p)T
+         #  // V = (ro, u, v, w, p)T
         V = CVectorPrimitive3D()
         if t!=0:
             xi = x/t
@@ -127,7 +160,7 @@ class CExactRiemannSolver:
             c_l = sqrt(GAMMA*p_l/ro_l)
         if ro_r != 0.:
             c_r = sqrt(GAMMA*p_r/ro_r)
-        #	// Vacuum
+        #   // Vacuum
         if res.s_type == "VacRW":
             V.u_adv_1 = u_adv_1_r
             V.u_adv_2 = u_adv_2_r
@@ -202,7 +235,7 @@ class CExactRiemannSolver:
             return V
         c_l_local = sqrt(GAMMA*res.p/res.ro_l)
         c_r_local = sqrt(GAMMA*res.p/res.ro_r)
-        #	// If non-vacuum zone -- let the point be to the left from the contact gap (xiContact = res.v)
+        #   // If non-vacuum zone -- let the point be to the left from the contact gap (xiContact = res.v)
         if xi < res.u_des:
             V.u_adv_1 = u_adv_1_l;
             V.u_adv_2 = u_adv_2_l;
@@ -263,8 +296,8 @@ class CExactRiemannSolver:
                     V.p = p_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_des_r-xi), 2.*GAMMA/(GAMMA-1.))
         return V    
     
-    def solve_RP(self, ro_l, u_l, p_l, ro_r, u_r, p_r):	
-        """Function finds resulting ro, u, p of Riemann task solving nonlinear equation by tangentials method of Newton"""	
+    def solve_RP(self, ro_l, u_l, p_l, ro_r, u_r, p_r): 
+        """Function finds resulting ro, u, p of Riemann task solving nonlinear equation by tangentials method of Newton"""  
         GAMMA = eos.GAMMA
         res = CRPSolutionPrimitive(0., 0., 0., 0., "")
         tol = 1.e-6
@@ -339,13 +372,13 @@ class CExactRiemannSolver:
             res.s_type = "SWSW"
             res.ro_l = ro_l*(res.p/p_l + (GAMMA-1.)/(GAMMA+1.))/((GAMMA-1.)/(GAMMA+1.)*res.p/p_l + 1.)
             res.ro_r = ro_r*(res.p/p_r + (GAMMA-1.)/(GAMMA+1.))/((GAMMA-1.)/(GAMMA+1.)*res.p/p_r + 1.)
-#	//Testing (no vacuum)
-#	/*double L =  - fL(p, roL, vL, pL);
-#	double R = fR(p, roR, vR, pR) + vR - vL;
-#	double delta = fabs((L-R)/0.5/(L+R));
-#	double LToro = - fL(res.p, roL, vL, pL);
-#	double RToro = fR(res.p, roR, vR, pR) + vR - vL;
-#	double deltaToro = fabs((LToro-RToro)/0.5/(LToro+RToro));*/
+#   //Testing (no vacuum)
+#   /*double L =  - fL(p, roL, vL, pL);
+#   double R = fR(p, roR, vR, pR) + vR - vL;
+#   double delta = fabs((L-R)/0.5/(L+R));
+#   double LToro = - fL(res.p, roL, vL, pL);
+#   double RToro = fR(res.p, roR, vR, pR) + vR - vL;
+#   double deltaToro = fabs((LToro-RToro)/0.5/(LToro+RToro));*/
         return res
 
     def fl(self, p, ro_l, u_l, p_l):

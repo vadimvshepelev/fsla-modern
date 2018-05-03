@@ -18,8 +18,6 @@ problem = problem.CProblem(eos, *problem.toro_test_1_x)
 field = field.CField(problem, eos, NX=10, NY=10, NZ=10)
 #print(field.x_mesh, field.y_mesh, field.z_mesh)
 
-field.write_file("test.dat", 0.)
-
 solver = exc.CExactRiemannSolver(eos)
 app = app.CApp(problem, eos, field, solver)
 app.run()

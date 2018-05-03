@@ -21,6 +21,7 @@ class CProblem:
         self.t_min = t_min
         self.t_max = t_max 
         self.bcs = bcs
+        self.CFL = .3
         """Boundary conditions transcription: 'w' -- wall, 'p' -- periodic, 't' -- transmissive, 
         order (natural): left X-b.c., right X-b.c., left Y-b.c., right Y-b.c., left Z-b.c., right Z-b.c."""        
         print("done!")
