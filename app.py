@@ -1,48 +1,63 @@
 # 'app.py' module, CApp class implementation
 
 import sys, time
-from clint.textui import progress
+#from clint.textui import progress
 
 class CApp:
     """Implements the whole calculation process"""
-    def __init__(self, problem, eos, field, solver):
-        print("Class CApp: Initializing numerical experiment process...", end="")        
+    def __init__(self, problem, eos, field, solver, output):
+        print("Class CApp: Initializing numerical experiment data...", end="")        
         self.problem = problem
         self.eos = eos
         self.field = field
         self.solver = solver	
+        self.output = output
         self.t = self.problem.t_min
         self.tau = 0.        
         print("done!")
 
     def run(self):
-        self.field.write_file("test.dat", self.t)  
+        self.output.write_file("test.dat", self.t)  
         init_str = "Starting computational process..."
-        print(init_str, end="")	        
-        counter = 0     
-
-        #for i in progress.bar(range(10)):
-        #    time.sleep(.1)
-            
-        #with progress.Bar(label="Starting computational process...", expected_size=10) as bar:
-        #    last_val = 0
-        #    for val in (1,2,3,9,10):
-        #        time.sleep(2 * (val - last_val))
-        #        bar.show(val)
-        #        last_val = val
-               
-        while(self.t < self.problem.t_max):
+        print(init_str)	        
+        counter = 0             
+        while(True):
             self.tau = self.calc_time_step(self.field, self.problem)
+            if self.t + self.tau > self.problem.t_max:
+                self.tau = self.problem.t_max-self.t
             #sys.stderr.write("%d: tau=%f t=%f CFL=%f \r" % (counter, self.tau, self.t, self.problem.CFL))
-            str_progress_bar = "[.......   ] 87% "
-            output_str = init_str + str_progress_bar + "%d: tau=%f t=%f CFL=%f \r" % (counter, self.tau, self.t, self.problem.CFL)
+            #str_progress_bar = "[.......   ] 87% "
+            str_progress_bar = self.output.get_progress_bar(self.t)
+            #output_str = "\r" + str_progress_bar + " iter=%d tau=%f t=%f CFL=%.1f " % (counter, self.tau, self.t, self.problem.CFL)
+            output_str = str_progress_bar + " iter=%d tau=%f t=%f CFL=%.1f \n" % (counter, self.tau, self.t, self.problem.CFL)
+            #if(self.t < .15*self.problem.t_max):
+            #    output_str += " writing data file..."
+            #    sys.stderr.write(output_str)
+            #    self.output.write_file("test.dat", self.t)        
+            #    sys.stderr.write("done!")
+            #else:
+            #    sys.stderr.write(output_str)
             sys.stderr.write(output_str)
-            time.sleep(1.)
+            time.sleep(1.)            
             self.t += self.tau
+            if self.t == self.problem.t_max:
+                break
             counter += 1        
         print(output_str[:-1], end="")    
         print("...done!")
-        self.field.write_file("test.dat", self.t)        
+        self.output.write_file("test.dat", self.t)      
+        
+        
+        
+        
+        
+        
+        print(self.output.get_progress_bar(self.problem.t_max))
+        
+        
+        
+        
+                
     
     def calc_time_step(self, field, problem):
         U = field.U

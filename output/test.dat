@@ -1,5 +1,5 @@
 VARIABLES="X","Y","Z","ro","ro*u","ro*v","ro*w","ro*E"
-TITLE="Conservative variables vector field t = 0.202837021134844"
+TITLE="Conservative variables vector field t = 0.2"
 ZONE T="Numerical", I=10, J=10, K=10, F=POINT
 -0.000000 -0.000000 -0.000000 1.000000 0.750000 0.000000 0.000000 2.781250
 -0.000000 -0.000000 0.100000 1.000000 0.750000 0.000000 0.000000 2.781250

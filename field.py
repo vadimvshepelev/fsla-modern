@@ -107,24 +107,7 @@ class CField:
                 for k in range(0, self.k_max): 
                     if bcs[5] == 't':
                         self.U[i][j][k] = self.U[i][j][self.k_max-1]
-
-    def write_file(self, file_name, t):
-        """Dumps mesh function to Tecplot data file for visualization"""
-        NX = self.i_max-self.i_min
-        NY = self.j_max-self.j_min
-        NZ = self.k_max-self.k_min
-        print("Function CField.write_file(): writing U field to file " + file_name + " at time t =", t, "...", end="") 
-        f = open(cfg.const["OUTPUT_DIR"]+file_name, 'w')
-        f.write('VARIABLES="X","Y","Z","ro","ro*u","ro*v","ro*w","ro*E"\n')
-        f.write('TITLE="Conservative variables vector field t = ' + str(t) + '"\n')
-        f.write('ZONE T="Numerical", I=%d, J=%d, K=%d, F=POINT\n' % (NX, NY, NZ))
-        for i in range(self.i_min, self.i_max):
-            for j in range(self.j_min, self.j_max):
-                for k in range(self.k_min, self.k_max):   
-                    f.write("%f %f %f %f %f %f %f %f\n" % (self.x_mesh[i], self.y_mesh[j], self.z_mesh[k], 
-                            *self.U[i][j][k]))
-        f.close()
-        print("done!")
+    
                              
         
                             
