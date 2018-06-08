@@ -18,33 +18,36 @@ class CApp:
 
     def run(self):
         self.output.write_file("test.dat", self.t)  
-        init_str = "Starting computational process..."
+        init_str = "Calculation in progress:"
         print(init_str)	        
         counter = 0             
-        while(True):
+        while(self.t < self.problem.t_max):
             self.tau = self.calc_time_step(self.field, self.problem)
             if self.t + self.tau > self.problem.t_max:
                 self.tau = self.problem.t_max-self.t
-            #sys.stderr.write("%d: tau=%f t=%f CFL=%f \r" % (counter, self.tau, self.t, self.problem.CFL))
-            #str_progress_bar = "[.......   ] 87% "
-            str_progress_bar = self.output.get_progress_bar(self.t)
-            #output_str = "\r" + str_progress_bar + " iter=%d tau=%f t=%f CFL=%.1f " % (counter, self.tau, self.t, self.problem.CFL)
-            output_str = str_progress_bar + " iter=%d tau=%f t=%f CFL=%.1f \n" % (counter, self.tau, self.t, self.problem.CFL)
-            #if(self.t < .15*self.problem.t_max):
-            #    output_str += " writing data file..."
-            #    sys.stderr.write(output_str)
-            #    self.output.write_file("test.dat", self.t)        
-            #    sys.stderr.write("done!")
-            #else:
-            #    sys.stderr.write(output_str)
-            sys.stderr.write(output_str)
-            time.sleep(1.)            
-            self.t += self.tau
-            if self.t == self.problem.t_max:
-                break
+            str_progress_bar = self.output.get_progress_bar(self.t + self.tau)
+            output_str = "\r" + str_progress_bar + " iter=%d tau=%.2f t=%.2f CFL=%.1f" % \
+                        (counter, self.tau, self.t+self.tau, self.problem.CFL)
+            self.solver.calc_step(self.field, self.problem, self.tau)
+
+            time.sleep(1.)   # some calculation
+
+            sys.stderr.write(output_str)            
+            if(self.t > .7*self.problem.t_max):
+                output_str_file = output_str + " writing to file..."
+                output_str_file_done = output_str + " writing to file...done!"
+                output_str_file_clr = output_str + "                        "
+                sys.stderr.write(output_str_file)
+                self.output.write_file("test.dat", self.t)  
+                sys.stderr.write(output_str_file_done)           
+                time.sleep(1.)
+                sys.stderr.write(output_str_file_clr)
+            self.t += self.tau            
             counter += 1        
-        print(output_str[:-1], end="")    
-        print("...done!")
+            
+        # print(output_str[:-1], end="")    
+        print()
+        print("done!")
         self.output.write_file("test.dat", self.t)      
         
         
@@ -52,7 +55,7 @@ class CApp:
         
         
         
-        print(self.output.get_progress_bar(self.problem.t_max))
+        #print(self.output.get_progress_bar(self.problem.t_max))
         
         
         

@@ -25,8 +25,7 @@ class COutput:
                 for k in range(self.field.k_min, self.field.k_max):   
                     f.write("%f %f %f %f %f %f %f %f\n" % (self.field.x_mesh[i], self.field.y_mesh[j], self.field.z_mesh[k], 
                             *self.field.U[i][j][k]))
-        f.close()
-        # print("done!")
+        f.close()        
        
     def get_progress_bar(self, t):
         output_string = '['

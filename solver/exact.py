@@ -1,3 +1,4 @@
+import math
 import numpy as np
 
 import config as cfg
@@ -12,11 +13,11 @@ class CVectorPrimitive1D:
         
 class CVectorPrimitive3D:
     """Primitive variables vector for 1D equations"""
-    def __init__(self, ro=None, u_des=None, u_adv_1=None, u_adv_2=None, p=None):
+    def __init__(self, ro=0., u_des=0., u_adv_1=0., u_adv_2 =0., p=0.):
         self.ro = ro
         self.u_des = u_des
         self.u_adv_1 = u_adv_1
-        self.u_adv_2 = u_adv_1
+        self.u_adv_2 = u_adv_2
         self.p = p
         
 
@@ -27,7 +28,7 @@ class CRPSolutionPrimitive3D:
         self.ro_r = ro_r
         self.u = u
         self.v = v
-        sefl.w = w
+        self.w = w
         self.p = p
         self.s_type = ""
         
@@ -47,29 +48,34 @@ class CExactRiemannSolver:
         k_min = field.k_min
         k_max = field.k_max        
         CONS_VECT_N_SIZE = cfg.const["CONS_VECT_N_SIZE"]
-        F = np.zeros(CONS_VECT_N_SIZE)
-        G = np.zeros(CONS_VECT_N_SIZE)
-        H = np.zeros(CONS_VECT_N_SIZE)
-        H = np.zeros(CONS_VECT_N_SIZE)
+        # F = np.zeros(CONS_VECT_N_SIZE)
+        # G = np.zeros(CONS_VECT_N_SIZE)
+        # H = np.zeros(CONS_VECT_N_SIZE)
         dx = field.dx
         dy = field.dy
         dz = field.dz
         g = 0 # ускорение
+        # Calculating fluxes
         for i in range(i_min, i_max):
             for j in range(j_min, j_max):
                 for k in range(k_min, k_max):
                     S = np.zeros(CONS_VECT_N_SIZE)
-                    F = calc_F(U[i-1][j][k], U[i][j][k])
-                    G = calc_G(U[i][j-1][k], U[i][j][k])
-                    H = calc_H(U[i][j][k-1], U[i][j][k])
-                    U_new[i][j][k] = U[i][j][k] - ( tau/dx*(F[i+1][j][k]-F[i][j][k]) -
-                                                    tau/dy*(G[i][j+1][k]-G[i][j][k]) -
-									                tau/dz*(H[i][j][k+1]-H[i][j][k]) ) + S*tau	
+                    field.F[i][j][k] = self.calc_F(field.U[i-1][j][k], field.U[i][j][k])
+                    field.G[i][j][k] = self.calc_G(field.U[i][j-1][k], field.U[i][j][k])
+                    field.H[i][j][k] = self.calc_H(field.U[i][j][k-1], field.U[i][j][k])
+                    field.S[i][j][k] = 0.
+        # Calculating new time-layer variables
+        for i in range(i_min, i_max):
+            for j in range(j_min, j_max):
+                for k in range(k_min, k_max):
+                    field.U_new[i][j][k] = field.U[i][j][k] - (tau/dx*(field.F[i+1][j][k]-field.F[i][j][k]) -
+                                                               tau/dy*(field.G[i][j+1][k]-field.G[i][j][k]) -
+									                           tau/dz*(field.H[i][j][k+1]-field.H[i][j][k])) + field.S*tau
         for i in range(i_min, i_max):
             for j in range(j_min, j_max):
                 for k in range(k_min, k_max):
                     U[i][j][k] = U_new[i][j][k] # Почему бы не сократить -- 
-												# U[i][j][k] -= tau/dx(...)+tau/dy(...)+tau/dz(...)
+                                                # U[i][j][k] -= tau/dx(...)+tau/dy(...)+tau/dz(...)
 					                            # Неудобство при реконструкции??? Только первый порядок? 
         field.set_bc(problem)		
 
@@ -81,21 +87,21 @@ class CExactRiemannSolver:
         w_l = U_l[3]/ro_l
         E_l = U_l[4]/ro_l
         e_l = E_l - .5*(u_l*u_l + v_l*v_l + w_l*w_l)
-        p_l = eos.getp(ro_l, e_l)
+        p_l = self.eos.getp(ro_l, e_l)
         ro_r = U_r[0]
         u_r = U_r[1]/ro_r
         v_r = U_r[2]/ro_r
         w_r = U_r[3]/ro_r
         E_r = U_r[4]/ro_r
         e_r = E_r - .5*(u_r*u_r + v_r*v_r + w_r*w_r)
-        p_r = eos.getp(ro_r, e_r)
-        res = calc_RP_solution(ro_l, u_l, v_l, w_l, ro_r, u_r, v_r, w_r, 0., .001)
-        E = eos.gete(res.ro, res.p) + .5*(res.u_des*res.u_des + res.u_adv_1*res.u_adv_1 + res.u_adv_2*res.u_adv_2) 
-        return [res.ro, 
-                res.p + res.ro*res.u_des*res.u_des, 
-                res.ro*res.u_des*res.u_adv_1,
-                res.ro*res.u_des*res.u_adv_2,
-                res.u_des*(res.p * res.ro*E)]     
+        p_r = self.eos.getp(ro_r, e_r)
+        Q = self.calc_RP_solution(ro_l, u_l, v_l, w_l, ro_r, p_l, u_r, v_r, w_r, p_r, 0., .001)
+        E = self.eos.gete(Q.ro, Q.p) + .5*(Q.u_des*Q.u_des + Q.u_adv_1*Q.u_adv_1 + Q.u_adv_2*Q.u_adv_2)
+        return [Q.ro,
+                Q.p + Q.ro*Q.u_des*Q.u_des,
+                Q.ro*Q.u_des*Q.u_adv_1,
+                Q.ro*Q.u_des*Q.u_adv_2,
+                Q.u_des*(Q.p * Q.ro*E)]
         
     def calc_G(self, U_l, U_r):    
         """Calculates G intercell flux based on Riemann problem solution in Y direction"""
@@ -146,8 +152,8 @@ class CExactRiemannSolver:
                 res.u_des*(res.p * res.ro*E)]
         
     def calc_RP_solution(self, ro_l, u_des_l, u_adv_1_l, u_adv_2_l, p_l, ro_r, u_des_r, u_adv_1_r, u_adv_2_r, p_r, x, t):
-        GAMMA = eos.GAMMA
-        res = solve_rp(ro_l, u_des_l, p_l, ro_r, u_des_r, p_r)
+        GAMMA = self.eos.GAMMA
+        res = self.solve_RP(ro_l, u_des_l, p_l, ro_r, u_des_r, p_r)
          #  // V = (ro, u, v, w, p)T
         V = CVectorPrimitive3D()
         if t!=0:
@@ -157,9 +163,17 @@ class CExactRiemannSolver:
         c_l = 0.
         c_r = 0.
         if ro_l != 0.:
-            c_l = sqrt(GAMMA*p_l/ro_l)
+            c_l = math.sqrt(GAMMA*p_l/ro_l)
         if ro_r != 0.:
-            c_r = sqrt(GAMMA*p_r/ro_r)
+            c_r = math.sqrt(GAMMA*p_r/ro_r)
+        # Trivial case
+        if res.s_type == "Const":
+            V.ro = ro_l
+            V.u_des = u_des_l
+            V.u_adv_1 = u_adv_1_l
+            V.u_adv_2 = u_adv_2_l
+            V.p = p_l
+            return V
         #   // Vacuum
         if res.s_type == "VacRW":
             V.u_adv_1 = u_adv_1_r
@@ -205,40 +219,40 @@ class CExactRiemannSolver:
             if xi <= xi_head_l:
                 V.ro = ro_l
                 V.u_des = u_des_l
-                V.u_adv_1 = u_adv_1_l;
-                V.u_adv_2 = u_adv_2_l;
+                V.u_adv_1 = u_adv_1_l
+                V.u_adv_2 = u_adv_2_l
                 V.p = p_l
             elif xi < xi_tail_l:
                 V.ro = ro_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_des_l-xi), 2./(GAMMA-1.))
                 V.u_des  = 2./(GAMMA+1)*(c_l + (GAMMA-1.)/2.*u_des_l + xi)
-                V.u_adv_1 = u_adv_1_l;
-                V.u_adv_2 = u_adv_2_l;
+                V.u_adv_1 = u_adv_1_l
+                V.u_adv_2 = u_adv_2_l
                 V.p  = p_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_des_l-xi), 2.*GAMMA/(GAMMA-1.))
             elif xi <= xi_tail_r:
                 V.ro = 0.
                 V.u_des = 0.
-                V.u_adv_1 = 0.;
-                V.u_adv_2 = 0.;
+                V.u_adv_1 = 0.
+                V.u_adv_2 = 0.
                 V.p = 0.
             elif xi < xi_head_r:
                 V.ro = ro_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_des_r-xi), 2./(GAMMA-1.))
                 V.u_des = 2./(GAMMA+1)*(-c_r + (GAMMA-1.)/2.*c_r + xi)
-                V.u_adv_1 = u_adv_1_r;
-                V.u_adv_2 = u_adv_2_r;
+                V.u_adv_1 = u_adv_1_r
+                V.u_adv_2 = u_adv_2_r
                 V.p = p_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_des_r-xi), 2.*GAMMA/(GAMMA-1.))
             else:
                 V.ro = ro_r
                 V.u_des = u_des_r
-                V.u_adv_1 = u_adv_1_r;
-                V.u_adv_2 = u_adv_2_r;
+                V.u_adv_1 = u_adv_1_r
+                V.u_adv_2 = u_adv_2_r
                 V.p = p_r
             return V
-        c_l_local = sqrt(GAMMA*res.p/res.ro_l)
-        c_r_local = sqrt(GAMMA*res.p/res.ro_r)
+        c_l_local = math.sqrt(GAMMA*res.p/res.ro_l)
+        c_r_local = math.sqrt(GAMMA*res.p/res.ro_r)
         #   // If non-vacuum zone -- let the point be to the left from the contact gap (xiContact = res.v)
-        if xi < res.u_des:
-            V.u_adv_1 = u_adv_1_l;
-            V.u_adv_2 = u_adv_2_l;
+        if xi < res.u:
+            V.u_adv_1 = u_adv_1_l
+            V.u_adv_2 = u_adv_2_l
             if res.s_type == "SWSW" or res.s_type == "SWRW":
                 xi_front = u_des_l - c_l*sqrt((GAMMA+1.)/2./GAMMA*res.p/p_l + (GAMMA-1.)/2./GAMMA)
                 if xi < xi_front:
@@ -267,8 +281,8 @@ class CExactRiemannSolver:
                                     2. * GAMMA / (GAMMA - 1.))
         # Let point be to the right from the contact gap (xiContact = res.v)
         else:
-            V.u_adv_1 = u_adv_1_r;
-            V.u_adv_2 = u_adv_2_r;
+            V.u_adv_1 = u_adv_1_r
+            V.u_adv_2 = u_adv_2_r
             if res.s_type == "RWSW" or res.s_type == "SWSW":
                 xi_front = u_des_r + c_r*sqrt((GAMMA+1.)/2./GAMMA*res.p/p_r + (GAMMA-1.)/2./GAMMA)
                 if xi > xi_front:
@@ -298,17 +312,18 @@ class CExactRiemannSolver:
     
     def solve_RP(self, ro_l, u_l, p_l, ro_r, u_r, p_r): 
         """Function finds resulting ro, u, p of Riemann task solving nonlinear equation by tangentials method of Newton"""  
-        GAMMA = eos.GAMMA
-        res = CRPSolutionPrimitive(0., 0., 0., 0., "")
+        GAMMA = self.eos.GAMMA
+        res = CRPSolutionPrimitive3D(0., 0., 0., 0., 0., 0., "")
         tol = 1.e-6
         c_l = 0.
         c_r = 0.
         if ro_l != 0.:
-            c_l = sqrt(GAMMA*p_l/ro_l)
+            c_l = math.sqrt(GAMMA*p_l/ro_l)
         if ro_r != 0.:
-            c_r = sqrt(GAMMA*p_r/ro_r)
+            c_r = math.sqrt(GAMMA*p_r/ro_r)
         # Trivial case U_l = U_r
         if ro_l == ro_r and u_l == u_r and p_l == p_r:
+            res.s_type = "Const"
             res.ro_l = ro_l
             res.ro_r = ro_r
             res.p = p_l

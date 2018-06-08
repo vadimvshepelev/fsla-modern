@@ -10,7 +10,9 @@ import field as field
 import output as output
 import app as app
 
-greeting_str = "================================\n"+"FSLA eulerian 3D hydrocode v.0.1\n"+"================================"
+greeting_str = "================================\n"+ \
+               "FSLA eulerian 3D hydrocode v.0.1\n"+ \
+               "================================"
 print(greeting_str)
 eos = eos.EOSIdeal(GAMMA=1.4)
 problem = problem.CProblem(eos, *problem.toro_test_1_x)	

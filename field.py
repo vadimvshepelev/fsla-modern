@@ -14,6 +14,10 @@ class CField:
                            NZ+2*cfg.const["N_GHOST_CELLS"],
                            cfg.const["CONS_VECT_N_SIZE"]))	
         self.U_new = np.copy(self.U)
+        self.F = np.copy(self.U)
+        self.G = np.copy(self.U)
+        self.H = np.copy(self.U)
+
         self.dx = (problem.x_max-problem.x_min)/NX
         self.x_mesh = np.linspace(problem.x_min - cfg.const["N_GHOST_CELLS"]*self.dx, 
                                   problem.x_max + cfg.const["N_GHOST_CELLS"]*self.dx, 
