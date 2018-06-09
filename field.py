@@ -17,6 +17,7 @@ class CField:
         self.F = np.copy(self.U)
         self.G = np.copy(self.U)
         self.H = np.copy(self.U)
+        self.S = np.copy(self.U)
 
         self.dx = (problem.x_max-problem.x_min)/NX
         self.x_mesh = np.linspace(problem.x_min - cfg.const["N_GHOST_CELLS"]*self.dx, 

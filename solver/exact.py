@@ -59,7 +59,6 @@ class CExactRiemannSolver:
         for i in range(i_min, i_max):
             for j in range(j_min, j_max):
                 for k in range(k_min, k_max):
-                    S = np.zeros(CONS_VECT_N_SIZE)
                     field.F[i][j][k] = self.calc_F(field.U[i-1][j][k], field.U[i][j][k])
                     field.G[i][j][k] = self.calc_G(field.U[i][j-1][k], field.U[i][j][k])
                     field.H[i][j][k] = self.calc_H(field.U[i][j][k-1], field.U[i][j][k])
@@ -111,21 +110,21 @@ class CExactRiemannSolver:
         w_l = U_l[3]/ro_l
         E_l = U_l[4]/ro_l
         e_l = E_l - .5*(u_l*u_l + v_l*v_l + w_l*w_l)
-        p_l = eos.getp(ro_l, e_l)
+        p_l = self.eos.getp(ro_l, e_l)
         ro_r = U_r[0]
         u_r = U_r[1]/ro_r
         v_r = U_r[2]/ro_r
         w_r = U_r[3]/ro_r
         E_r = U_r[4]/ro_r
         e_r = E_r - .5*(u_r*u_r + v_r*v_r + w_r*w_r)
-        p_r = eos.getp(ro_r, e_r)        
-        res = calc_RP_solution(ro_l, v_l, w_l, u_l, ro_r, v_r, w_r, u_r, 0., .001)
-        E = eos.gete(res.ro, res.p) + .5*(res.u_adv_1*res.u_adv_1 + res.u_des*res.u_des + res.u_adv_2*res.u_adv_2) 
-        return [res.ro,
-                res.ro*res.u_adv_1*res.u_des,
-                res.p + res.ro*res.u_des*res.u_des,                
-                res.ro*res.u_des*res.u_adv_2,
-                res.u_des*(res.p * res.ro*E)]
+        p_r = self.eos.getp(ro_r, e_r)
+        Q = self.calc_RP_solution(ro_l, v_l, w_l, u_l, p_l, ro_r, v_r, w_r, u_r, p_r, 0., .001)
+        E = self.eos.gete(Q.ro, Q.p) + .5*(Q.u_adv_1*Q.u_adv_1 + Q.u_des*Q.u_des + Q.u_adv_2*Q.u_adv_2)
+        return [Q.ro,
+                Q.ro*Q.u_adv_1*Q.u_des,
+                Q.p + Q.ro*Q.u_des*Q.u_des,
+                Q.ro*Q.u_des*Q.u_adv_2,
+                Q.u_des*(Q.p * Q.ro*E)]
         
     def calc_H(self, U_l, U_r):    
         """Calculates H intercell flux based on Riemann problem solution in Z direction"""    
@@ -135,26 +134,26 @@ class CExactRiemannSolver:
         w_l = U_l[3]/ro_l
         E_l = U_l[4]/ro_l
         e_l = E_l - .5*(u_l*u_l + v_l*v_l + w_l*w_l)
-        p_l = eos.getp(ro_l, e_l)
+        p_l = self.eos.getp(ro_l, e_l)
         ro_r = U_r[0]
         u_r = U_r[1]/ro_r
         v_r = U_r[2]/ro_r
         w_r = U_r[3]/ro_r
         E_r = U_r[4]/ro_r
         e_r = E_r - .5*(u_r*u_r + v_r*v_r + w_r*w_r)
-        p_r = eos.getp(ro_r, e_r)
-        res = calc_RP_solution(ro_l, w_l, u_l, v_l, ro_r, w_r, u_r, v_r, 0., .001)
-        E = eos.gete(res.ro, res.p) + .5*(res.u_adv_1*res.u_adv_1 + res.u_adv_2*res.u_adv_2 + res.u_des*res.u_des) 
-        return [res.ro,
-                res.ro*res.u_adv_1*res.u_des,
-                res.ro*res.u_adv_2*res.u_des,
-                res.p + res.ro*res.u_des*res.u_des,                                
-                res.u_des*(res.p * res.ro*E)]
+        p_r = self.eos.getp(ro_r, e_r)
+        Q = self.calc_RP_solution(ro_l, w_l, u_l, v_l, p_l, ro_r, w_r, u_r, v_r, p_r, 0., .001)
+        E = self.eos.gete(Q.ro, Q.p) + .5*(Q.u_adv_1*Q.u_adv_1 + Q.u_adv_2*Q.u_adv_2 + Q.u_des*Q.u_des)
+        return [Q.ro,
+                Q.ro*Q.u_adv_1*Q.u_des,
+                Q.ro*Q.u_adv_2*Q.u_des,
+                Q.p + Q.ro*Q.u_des*Q.u_des,
+                Q.u_des*(Q.p * Q.ro*E)]
         
     def calc_RP_solution(self, ro_l, u_des_l, u_adv_1_l, u_adv_2_l, p_l, ro_r, u_des_r, u_adv_1_r, u_adv_2_r, p_r, x, t):
         GAMMA = self.eos.GAMMA
-        res = self.solve_RP(ro_l, u_des_l, p_l, ro_r, u_des_r, p_r)
-         #  // V = (ro, u, v, w, p)T
+        res = self.solve_RP_1d(ro_l, u_des_l, p_l, ro_r, u_des_r, p_r)
+        #  // V = (ro, u, v, w, p)T
         V = CVectorPrimitive3D()
         if t!=0:
             xi = x/t
@@ -254,7 +253,7 @@ class CExactRiemannSolver:
             V.u_adv_1 = u_adv_1_l
             V.u_adv_2 = u_adv_2_l
             if res.s_type == "SWSW" or res.s_type == "SWRW":
-                xi_front = u_des_l - c_l*sqrt((GAMMA+1.)/2./GAMMA*res.p/p_l + (GAMMA-1.)/2./GAMMA)
+                xi_front = u_des_l - c_l*math.sqrt((GAMMA+1.)/2./GAMMA*res.p/p_l + (GAMMA-1.)/2./GAMMA)
                 if xi < xi_front:
                     V.ro = ro_l
                     V.u_des = u_des_l
@@ -310,8 +309,8 @@ class CExactRiemannSolver:
                     V.p = p_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_des_r-xi), 2.*GAMMA/(GAMMA-1.))
         return V    
     
-    def solve_RP(self, ro_l, u_l, p_l, ro_r, u_r, p_r): 
-        """Function finds resulting ro, u, p of Riemann task solving nonlinear equation by tangentials method of Newton"""  
+    def solve_RP_1d(self, ro_l, u_l, p_l, ro_r, u_r, p_r):
+        """Function finds resulting ro, u, p of 1d Riemann task solving nonlinear equation by tangentials method of Newton"""
         GAMMA = self.eos.GAMMA
         res = CRPSolutionPrimitive3D(0., 0., 0., 0., 0., 0., "")
         tol = 1.e-6
@@ -362,15 +361,15 @@ class CExactRiemannSolver:
         while True:
             p_prev = p
             p = p_prev - \
-            (fl(p_prev, ro_l, u_l, p_l) + fr(p_prev, ro_r, u_r, p_r) + u_r - u_l) / \
-            (dfldp(p_prev, ro_l, u_l, p_l) + dfrdp(p_prev, ro_r, u_r, p_r))
+            (self.fl(p_prev, ro_l, u_l, p_l) + self.fr(p_prev, ro_r, u_r, p_r) + u_r - u_l) / \
+            (self.dfldp(p_prev, ro_l, u_l, p_l) + self.dfrdp(p_prev, ro_r, u_r, p_r))
             if p <= 0.:
                 p = tol
             it_c += 1
-            if fabs(2*(p-p_prev)/(p+p_prev))<=tol:
+            if math.fabs(2*(p-p_prev)/(p+p_prev))<=tol:
                 break
         res.p = p
-        res.u = 0.5*(u_l + u_r) + 0.5*(fr(p, ro_r, u_r, p_r) - fl(p, ro_l, u_l, p_l))
+        res.u = 0.5*(u_l + u_r) + 0.5*(self.fr(p, ro_r, u_r, p_r) - self.fl(p, ro_l, u_l, p_l))
         if p < p_l and p > p_r:
             res.s_type = "RWSW"
             res.ro_l  = ro_l*pow(res.p/p_l, 1./GAMMA)
@@ -397,45 +396,49 @@ class CExactRiemannSolver:
         return res
 
     def fl(self, p, ro_l, u_l, p_l):
+        GAMMA = self.eos.GAMMA
         if p>p_l:
             al = 2./(GAMMA+1)/ro_l
             bl = (GAMMA-1.)/(GAMMA+1.)*p_l
-            f = (p-p_l) * sqrt(al/(p+bl))
+            f = (p-p_l) * math.sqrt(al/(p+bl))
             return f
         else:
-            c_l = sqrt(GAMMA*p_l/ro_l)
+            c_l = math.sqrt(GAMMA*p_l/ro_l)
             f = 2.*c_l/(GAMMA-1.) * ( (pow(p/p_l, (GAMMA-1.)/2./GAMMA)) - 1. )
             return f
 
     def dfldp(self, p, ro_l, u_l, p_l):
+        GAMMA = self.eos.GAMMA
         if p>p_l:
             al = 2./(GAMMA+1)/ro_l
             bl = (GAMMA-1.)/(GAMMA+1.)*p_l
-            dfdp = sqrt(al/(p+bl)) * (1. - (p-p_l)/2./(p+bl))
+            dfdp = math.sqrt(al/(p+bl)) * (1. - (p-p_l)/2./(p+bl))
             return dfdp
         else:
-            c_l = sqrt(GAMMA*p_l/ro_l)
+            c_l = math.sqrt(GAMMA*p_l/ro_l)
             dfdp = c_l/p_l/GAMMA*pow(p/p_l, -(GAMMA+1)/2./GAMMA)
             return dfdp
 
     def fr(self, p, ro_r, u_r, p_r):
+        GAMMA = self.eos.GAMMA
         if p > p_r:
             ar = 2./(GAMMA+1)/ro_r
             br = (GAMMA-1.)/(GAMMA+1.)*p_r
-            f = (p-p_r) * sqrt(ar/(p+br))
+            f = (p-p_r) * math.sqrt(ar/(p+br))
             return f
         else:
-            c_r = sqrt(GAMMA*p_r/ro_r)
+            c_r = math.sqrt(GAMMA*p_r/ro_r)
             f = 2.*c_r/(GAMMA-1.) * ((pow(p/p_r, (GAMMA-1.)/2./GAMMA)) - 1.)
             return f
 
     def dfrdp(self, p, ro_r, u_r, p_r):
+        GAMMA = self.eos.GAMMA
         if p > p_r:
             AR = 2./(GAMMA + 1) / ro_r
             BR = (GAMMA - 1.) / (GAMMA + 1.) * p_r
-            dfdp = sqrt(AR/(p+BR)) * (1. - (p-p_r)/2./(p+BR))
+            dfdp = math.sqrt(AR/(p+BR)) * (1. - (p-p_r)/2./(p+BR))
             return dfdp
         else:
-            cR = sqrt(GAMMA * p_r / ro_r)
+            cR = math.sqrt(GAMMA * p_r / ro_r)
             dfdp = cR/p_r / GAMMA * pow(p / p_r, -(GAMMA + 1) / 2. / GAMMA)
             return dfdp
