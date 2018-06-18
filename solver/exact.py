@@ -69,13 +69,24 @@ class CExactRiemannSolver:
                 for k in range(k_min, k_max):
                     field.U_new[i][j][k] = field.U[i][j][k] - (tau/dx*(field.F[i+1][j][k]-field.F[i][j][k]) -
                                                                tau/dy*(field.G[i][j+1][k]-field.G[i][j][k]) -
-									                           tau/dz*(field.H[i][j][k+1]-field.H[i][j][k])) + field.S*tau
+									                           tau/dz*(field.H[i][j][k+1]-field.H[i][j][k])) + \
+                                                              field.S[i][j][k]*tau
         for i in range(i_min, i_max):
             for j in range(j_min, j_max):
                 for k in range(k_min, k_max):
-                    U[i][j][k] = U_new[i][j][k] # Почему бы не сократить -- 
+                    field.U[i][j][k] = field.U_new[i][j][k]  # Почему бы не сократить --
                                                 # U[i][j][k] -= tau/dx(...)+tau/dy(...)+tau/dz(...)
-					                            # Неудобство при реконструкции??? Только первый порядок? 
+					                            # Неудобство при реконструкции??? Только первый порядок?
+
+
+
+                                                # Почему бы не использовать копирование массива numpy? Должно быть
+                                                # быстрее!
+
+
+
+
+
         field.set_bc(problem)		
 
     def calc_F(self, U_l, U_r):
@@ -152,7 +163,7 @@ class CExactRiemannSolver:
         
     def calc_RP_solution(self, ro_l, u_des_l, u_adv_1_l, u_adv_2_l, p_l, ro_r, u_des_r, u_adv_1_r, u_adv_2_r, p_r, x, t):
         GAMMA = self.eos.GAMMA
-        res = self.solve_RP_1d(ro_l, u_des_l, p_l, ro_r, u_des_r, p_r)
+        res_1d = self.solve_RP_1d(ro_l, u_des_l, p_l, ro_r, u_des_r, p_r)
         #  // V = (ro, u, v, w, p)T
         V = CVectorPrimitive3D()
         if t!=0:
@@ -166,7 +177,7 @@ class CExactRiemannSolver:
         if ro_r != 0.:
             c_r = math.sqrt(GAMMA*p_r/ro_r)
         # Trivial case
-        if res.s_type == "Const":
+        if res_1d.s_type == "Const":
             V.ro = ro_l
             V.u_des = u_des_l
             V.u_adv_1 = u_adv_1_l
@@ -174,7 +185,7 @@ class CExactRiemannSolver:
             V.p = p_l
             return V
         #   // Vacuum
-        if res.s_type == "VacRW":
+        if res_1d.s_type == "VacRW":
             V.u_adv_1 = u_adv_1_r
             V.u_adv_2 = u_adv_2_r
             xi_head = u_des_r + c_r
@@ -192,7 +203,7 @@ class CExactRiemannSolver:
                 V.u_des = u_des_r
                 V.p = p_r
             return V
-        if res.s_type == "RWVac":
+        if res_1d.s_type == "RWVac":
             V.u_adv_1 = u_adv_1_l
             V.u_adv_2 = u_adv_2_l    
             xi_head = u_des_l - c_l
@@ -210,7 +221,7 @@ class CExactRiemannSolver:
                 V.u_des = u_des_l
                 V.p = p_l
             return V
-        if res.s_type == "RWVacRW":
+        if res_1d.s_type == "RWVacRW":
             xi_head_l = u_des_l - c_l
             xi_tail_l = u_des_l + 2.*c_l/(GAMMA-1.)
             xi_head_r = u_des_r + c_r
@@ -246,33 +257,33 @@ class CExactRiemannSolver:
                 V.u_adv_2 = u_adv_2_r
                 V.p = p_r
             return V
-        c_l_local = math.sqrt(GAMMA*res.p/res.ro_l)
-        c_r_local = math.sqrt(GAMMA*res.p/res.ro_r)
+        c_l_local = math.sqrt(GAMMA*res_1d.p/res_1d.ro_l)
+        c_r_local = math.sqrt(GAMMA*res_1d.p/res_1d.ro_r)
         #   // If non-vacuum zone -- let the point be to the left from the contact gap (xiContact = res.v)
-        if xi < res.u:
+        if xi < res_1d.u:
             V.u_adv_1 = u_adv_1_l
             V.u_adv_2 = u_adv_2_l
-            if res.s_type == "SWSW" or res.s_type == "SWRW":
-                xi_front = u_des_l - c_l*math.sqrt((GAMMA+1.)/2./GAMMA*res.p/p_l + (GAMMA-1.)/2./GAMMA)
+            if res_1d.s_type == "SWSW" or res_1d.s_type == "SWRW":
+                xi_front = u_des_l - c_l*math.sqrt((GAMMA+1.)/2./GAMMA*res_1d.p/p_l + (GAMMA-1.)/2./GAMMA)
                 if xi < xi_front:
                     V.ro = ro_l
                     V.u_des = u_des_l
                     V.p = p_l
                 else:
-                    V.ro = res.ro_l
-                    V.u_des = res.u_des
-                    V.p = res.p
-            elif res.s_type == "RWSW" or res.s_type == "RWRW":
+                    V.ro = res_1d.ro_l
+                    V.u_des = res_1d.u
+                    V.p = res_1d.p
+            elif res_1d.s_type == "RWSW" or res_1d.s_type == "RWRW":
                 xi_head = u_des_l - c_l
-                xi_tail = res.u_des - c_l_local
+                xi_tail = res_1d.u - c_l_local
                 if xi <= xi_head:
                     V.ro = ro_l
                     V.u_des = u_des_l
                     V.p = p_l
                 elif xi >= xi_tail:
-                    V.ro = res.ro_l
-                    V.u_des = res.u_des
-                    V.p = res.p
+                    V.ro = res_1d.ro_l
+                    V.u_des = res_1d.u
+                    V.p = res_1d.p
                 else:
                     V.ro = ro_l*pow(2./(GAMMA+1.)+(GAMMA-1.)/(GAMMA+1.)/c_l*(u_des_l-xi), 2./(GAMMA-1.))
                     V.u_des = 2./(GAMMA+1)*(c_l + (GAMMA-1.)/2.*u_des_l + xi)
@@ -282,27 +293,27 @@ class CExactRiemannSolver:
         else:
             V.u_adv_1 = u_adv_1_r
             V.u_adv_2 = u_adv_2_r
-            if res.s_type == "RWSW" or res.s_type == "SWSW":
-                xi_front = u_des_r + c_r*sqrt((GAMMA+1.)/2./GAMMA*res.p/p_r + (GAMMA-1.)/2./GAMMA)
+            if res_1d.s_type == "RWSW" or res_1d.s_type == "SWSW":
+                xi_front = u_des_r + c_r*math.sqrt((GAMMA+1.)/2./GAMMA*res_1d.p/p_r + (GAMMA-1.)/2./GAMMA)
                 if xi > xi_front:
                     V.ro = ro_r
                     V.u_des = u_des_r
                     V.p = p_r
                 else:
-                    V.ro = res.ro_r
-                    V.u_des = res.u_des
-                    V.p = res.p
-            elif res.s_type == "RWRW" or res.s_type == "SWRW":
-                xi_head = u_r + c_r
-                xi_tail = res.u_des + c_r_local
+                    V.ro = res_1d.ro_r
+                    V.u_des = res_1d.u
+                    V.p = res_1d.p
+            elif res_1d.s_type == "RWRW" or res_1d.s_type == "SWRW":
+                xi_head = u_des_r + c_r
+                xi_tail = res_1d.u + c_r_local
                 if xi >= xi_head:
                     V.ro = ro_r
                     V.u_des = u_des_r
                     V.p = p_r
                 elif xi <= xi_tail:
-                    V.ro = res.ro_r
-                    V.u_des = res.u_des
-                    V.p = res.p
+                    V.ro = res_1d.ro_r
+                    V.u_des = res_1d.u
+                    V.p = res_1d.p
                 else:
                     V.ro = ro_r*pow(2./(GAMMA+1.) - (GAMMA-1.)/(GAMMA+1.)/c_r*(u_des_r-xi), 2./(GAMMA-1.))
                     V.u_des = 2./(GAMMA+1)*(-c_r + (GAMMA-1.)/2.*u_des_r + xi)
