@@ -22,6 +22,10 @@ class CApp:
         print(init_str)	        
         counter = 0             
         while(self.t < self.problem.t_max):
+
+            self.output.write_file("test-02.dat", self.t)
+
+
             self.tau = self.calc_time_step(self.field, self.problem)
             if self.t + self.tau > self.problem.t_max:
                 self.tau = self.problem.t_max-self.t
@@ -29,9 +33,6 @@ class CApp:
             output_str = "\r" + str_progress_bar + " iter=%d tau=%.2f t=%.2f CFL=%.1f" % \
                         (counter, self.tau, self.t+self.tau, self.problem.CFL)
             self.solver.calc_step(self.field, self.problem, self.tau)
-
-            time.sleep(1.)   # some calculation
-
             sys.stderr.write(output_str)            
             if(self.t > .7*self.problem.t_max):
                 output_str_file = output_str + " writing to file..."
