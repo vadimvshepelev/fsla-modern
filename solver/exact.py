@@ -83,11 +83,8 @@ class CExactRiemannSolver:
                                                 # Почему бы не использовать копирование массива numpy? Должно быть
                                                 # быстрее!
 
+        field.set_bc(problem)
 
-
-
-
-        field.set_bc(problem)		
 
     def calc_F(self, U_l, U_r):
         """Calculates F intercell flux based on Riemann problem solution in X direction"""
@@ -105,7 +102,7 @@ class CExactRiemannSolver:
         E_r = U_r[4]/ro_r
         e_r = E_r - .5*(u_r*u_r + v_r*v_r + w_r*w_r)
         p_r = self.eos.getp(ro_r, e_r)
-        Q = self.calc_RP_solution(ro_l, u_l, v_l, w_l, ro_r, p_l, u_r, v_r, w_r, p_r, 0., .001)
+        Q = self.calc_RP_solution(ro_l, u_l, v_l, w_l, p_l, ro_r, u_r, v_r, w_r, p_r, 0., .001)
         E = self.eos.gete(Q.ro, Q.p) + .5*(Q.u_des*Q.u_des + Q.u_adv_1*Q.u_adv_1 + Q.u_adv_2*Q.u_adv_2)
         return [Q.ro,
                 Q.p + Q.ro*Q.u_des*Q.u_des,

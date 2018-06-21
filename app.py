@@ -13,25 +13,25 @@ class CApp:
         self.solver = solver	
         self.output = output
         self.t = self.problem.t_min
-        self.tau = 0.        
+        self.tau = 0.
+        self.counter = 0.
         print("done!")
 
     def run(self):
         self.output.write_file("test.dat", self.t)  
         init_str = "Calculation in progress:"
         print(init_str)	        
-        counter = 0             
+        self.counter = 0
         while(self.t < self.problem.t_max):
 
             self.output.write_file("test-02.dat", self.t)
-
 
             self.tau = self.calc_time_step(self.field, self.problem)
             if self.t + self.tau > self.problem.t_max:
                 self.tau = self.problem.t_max-self.t
             str_progress_bar = self.output.get_progress_bar(self.t + self.tau)
             output_str = "\r" + str_progress_bar + " iter=%d tau=%.2f t=%.2f CFL=%.1f" % \
-                        (counter, self.tau, self.t+self.tau, self.problem.CFL)
+                        (self.counter, self.tau, self.t+self.tau, self.problem.CFL)
             self.solver.calc_step(self.field, self.problem, self.tau)
             sys.stderr.write(output_str)            
             if(self.t > .7*self.problem.t_max):
@@ -40,11 +40,10 @@ class CApp:
                 output_str_file_clr = output_str + "                        "
                 sys.stderr.write(output_str_file)
                 self.output.write_file("test.dat", self.t)  
-                sys.stderr.write(output_str_file_done)           
-                time.sleep(1.)
+                sys.stderr.write(output_str_file_done)
                 sys.stderr.write(output_str_file_clr)
             self.t += self.tau            
-            counter += 1        
+            self.counter += 1
             
         # print(output_str[:-1], end="")    
         print()
@@ -90,7 +89,17 @@ class CApp:
                     v = U[i][j][k][2]/ro
                     w = U[i][j][k][3]/ro
                     e = U[i][j][k][4]/ro - .5*(u*u + v*v + w*w)
-                    с = self.eos.getc(ro, e)
+
+
+
+                    try:
+                        с = self.eos.getc(ro, e)
+                    except ValueError:
+                        print("\nError: CApp::calc_time_step(): negative pressure/density in the node i=%d j=%d k=%d" % (i, j, k))
+                        exit(1)
+
+
+
                     tau_new = CFL*1./3*(dx+dy+dz)/с
                     if(tau_new < tau): 
                        tau = tau_new

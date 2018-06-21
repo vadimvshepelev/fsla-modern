@@ -15,5 +15,11 @@ class EOSIdeal:
         
     def getc(self, ro, e):
         p = self.getp(ro, e)
-        return sqrt(self.GAMMA*p/ro)
+        return sqrt(self.GAMMA * p / ro)
+        #try:
+        #    return sqrt(self.GAMMA*p/ro)
+        #except ValueError:
+        #    print("Exception!!!")
+        #    return 0
+
         
