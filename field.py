@@ -109,7 +109,7 @@ class CField:
         # Right Z-b.c.
         for i in range(0, self.i_max+n_bound):
             for j in range(0, self.j_max+n_bound):
-                for k in range(0, self.k_max): 
+                for k in range(self.k_max, self.k_max+n_bound):
                     if bcs[5] == 't':
                         self.U[i][j][k] = self.U[i][j][self.k_max-1]
     

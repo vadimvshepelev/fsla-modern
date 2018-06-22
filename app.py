@@ -32,8 +32,8 @@ class CApp:
             str_progress_bar = self.output.get_progress_bar(self.t + self.tau)
             output_str = "\r" + str_progress_bar + " iter=%d tau=%.2f t=%.2f CFL=%.1f" % \
                         (self.counter, self.tau, self.t+self.tau, self.problem.CFL)
+            sys.stderr.write(output_str)
             self.solver.calc_step(self.field, self.problem, self.tau)
-            sys.stderr.write(output_str)            
             if(self.t > .7*self.problem.t_max):
                 output_str_file = output_str + " writing to file..."
                 output_str_file_done = output_str + " writing to file...done!"

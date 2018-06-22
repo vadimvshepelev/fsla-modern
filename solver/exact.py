@@ -41,47 +41,47 @@ class CExactRiemannSolver:
         print("done!")
         
     def calc_step(self, field, problem, tau):
+        U = field.U
+        U_new = field.U_new
+        F = field.F
+        G = field.G
+        H = field.H
+        S = field.S
         i_min = field.i_min
         i_max = field.i_max     
         j_min = field.j_min
         j_max = field.j_max
         k_min = field.k_min
-        k_max = field.k_max        
-        CONS_VECT_N_SIZE = cfg.const["CONS_VECT_N_SIZE"]
-        # F = np.zeros(CONS_VECT_N_SIZE)
-        # G = np.zeros(CONS_VECT_N_SIZE)
-        # H = np.zeros(CONS_VECT_N_SIZE)
+        k_max = field.k_max
         dx = field.dx
         dy = field.dy
         dz = field.dz
         g = 0 # ускорение
         # Calculating fluxes
-        for i in range(i_min, i_max):
-            for j in range(j_min, j_max):
-                for k in range(k_min, k_max):
-                    field.F[i][j][k] = self.calc_F(field.U[i-1][j][k], field.U[i][j][k])
-                    field.G[i][j][k] = self.calc_G(field.U[i][j-1][k], field.U[i][j][k])
-                    field.H[i][j][k] = self.calc_H(field.U[i][j][k-1], field.U[i][j][k])
-                    field.S[i][j][k] = 0.
+        for i in range(i_min, i_max+1):
+            for j in range(j_min, j_max+1):
+                for k in range(k_min, k_max+1):
+                    F[i][j][k] = self.calc_F(U[i-1][j][k], U[i][j][k])
+                    G[i][j][k] = self.calc_G(U[i][j-1][k], U[i][j][k])
+                    H[i][j][k] = self.calc_H(U[i][j][k-1], U[i][j][k])
+                    S[i][j][k] = 0.
         # Calculating new time-layer variables
         for i in range(i_min, i_max):
             for j in range(j_min, j_max):
                 for k in range(k_min, k_max):
-                    field.U_new[i][j][k] = field.U[i][j][k] - (tau/dx*(field.F[i+1][j][k]-field.F[i][j][k]) -
-                                                               tau/dy*(field.G[i][j+1][k]-field.G[i][j][k]) -
-									                           tau/dz*(field.H[i][j][k+1]-field.H[i][j][k])) + \
-                                                              field.S[i][j][k]*tau
+                    field.U_new[i][j][k] = field.U[i][j][k] - (tau/dx*(F[i+1][j][k]-F[i][j][k]) -
+                                                               tau/dy*(G[i][j+1][k]-G[i][j][k]) -
+                                                               tau/dz*(H[i][j][k+1]-H[i][j][k])) + \
+                                                               S[i][j][k]*tau
         for i in range(i_min, i_max):
             for j in range(j_min, j_max):
                 for k in range(k_min, k_max):
-                    field.U[i][j][k] = field.U_new[i][j][k]  # Почему бы не сократить --
-                                                # U[i][j][k] -= tau/dx(...)+tau/dy(...)+tau/dz(...)
-					                            # Неудобство при реконструкции??? Только первый порядок?
+                    U[i][j][k] = U_new[i][j][k]    # Почему бы не сократить --
+                                                   # U[i][j][k] -= tau/dx(...)+tau/dy(...)+tau/dz(...)
+                                                   # Неудобство при реконструкции??? Только первый порядок?
 
-
-
-                                                # Почему бы не использовать копирование массива numpy? Должно быть
-                                                # быстрее!
+                                                   # Почему бы не использовать копирование массива numpy? Должно быть
+                                                   # быстрее!
 
         field.set_bc(problem)
 
