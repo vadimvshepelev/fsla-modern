@@ -1,6 +1,7 @@
 # 'field.py' module, CField class implementation
 
 import numpy as np
+import math
 
 import config as cfg
 import eos.ideal as eos
@@ -67,11 +68,13 @@ class CField:
                         w_r = 0.
                         e_r = eos.gete(ro_r, p_r)
                         E_r = e_r + u_r*u_r/2. + v_r*v_r/2. + w_r*w_r/2.
-                        if self.x_mesh[i] < problem.q_0 :
+                        if self.x_mesh[i] < problem.q_0 and math.fabs(self.x_mesh[i]-problem.q_0)>self.dx/100.:
                             self.U[i][j][k] = [ro_l, ro_l*u_l, ro_l*v_l, ro_l*w_l, ro_l*E_l]
                         else:
                             self.U[i][j][k] = [ro_r, ro_r*u_r, ro_r*v_r, ro_r*w_r, ro_r*E_r]                            
-                            
+                    else:
+                        print("Error: CField.set_ic(): Sorry, only x-direction case can be considered. Bye!")
+                        exit(-1)
     def set_bc(self, problem):
         """Sets boundary conditions to the 6 boundary layers of config.const['N_GHOST_CELLS'] fictious cells"""
         bcs = problem.bcs

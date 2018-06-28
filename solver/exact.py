@@ -104,11 +104,11 @@ class CExactRiemannSolver:
         p_r = self.eos.getp(ro_r, e_r)
         Q = self.calc_RP_solution(ro_l, u_l, v_l, w_l, p_l, ro_r, u_r, v_r, w_r, p_r, 0., .001)
         E = self.eos.gete(Q.ro, Q.p) + .5*(Q.u_des*Q.u_des + Q.u_adv_1*Q.u_adv_1 + Q.u_adv_2*Q.u_adv_2)
-        return [Q.ro,
+        return [Q.ro*Q.u_des,
                 Q.p + Q.ro*Q.u_des*Q.u_des,
                 Q.ro*Q.u_des*Q.u_adv_1,
                 Q.ro*Q.u_des*Q.u_adv_2,
-                Q.u_des*(Q.p * Q.ro*E)]
+                Q.u_des*(Q.p + Q.ro*E)]
         
     def calc_G(self, U_l, U_r):    
         """Calculates G intercell flux based on Riemann problem solution in Y direction"""
@@ -128,14 +128,14 @@ class CExactRiemannSolver:
         p_r = self.eos.getp(ro_r, e_r)
         Q = self.calc_RP_solution(ro_l, v_l, w_l, u_l, p_l, ro_r, v_r, w_r, u_r, p_r, 0., .001)
         E = self.eos.gete(Q.ro, Q.p) + .5*(Q.u_adv_1*Q.u_adv_1 + Q.u_des*Q.u_des + Q.u_adv_2*Q.u_adv_2)
-        return [Q.ro,
+        return [Q.ro*Q.u_des,
                 Q.ro*Q.u_adv_1*Q.u_des,
                 Q.p + Q.ro*Q.u_des*Q.u_des,
                 Q.ro*Q.u_des*Q.u_adv_2,
-                Q.u_des*(Q.p * Q.ro*E)]
-        
-    def calc_H(self, U_l, U_r):    
-        """Calculates H intercell flux based on Riemann problem solution in Z direction"""    
+                Q.u_des*(Q.p + Q.ro*E)]
+
+    def calc_H(self, U_l, U_r):
+        """Calculates H intercell flux based on Riemann problem solution in Z direction"""
         ro_l = U_l[0]
         u_l = U_l[1]/ro_l
         v_l = U_l[2]/ro_l
@@ -152,11 +152,11 @@ class CExactRiemannSolver:
         p_r = self.eos.getp(ro_r, e_r)
         Q = self.calc_RP_solution(ro_l, w_l, u_l, v_l, p_l, ro_r, w_r, u_r, v_r, p_r, 0., .001)
         E = self.eos.gete(Q.ro, Q.p) + .5*(Q.u_adv_1*Q.u_adv_1 + Q.u_adv_2*Q.u_adv_2 + Q.u_des*Q.u_des)
-        return [Q.ro,
+        return [Q.ro*Q.u_des,
                 Q.ro*Q.u_adv_1*Q.u_des,
                 Q.ro*Q.u_adv_2*Q.u_des,
                 Q.p + Q.ro*Q.u_des*Q.u_des,
-                Q.u_des*(Q.p * Q.ro*E)]
+                Q.u_des*(Q.p + Q.ro*E)]
         
     def calc_RP_solution(self, ro_l, u_des_l, u_adv_1_l, u_adv_2_l, p_l, ro_r, u_des_r, u_adv_1_r, u_adv_2_r, p_r, x, t):
         GAMMA = self.eos.GAMMA
