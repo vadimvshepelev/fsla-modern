@@ -22,6 +22,7 @@ class CProblem:
         self.t_max = t_max 
         self.bcs = bcs
         self.CFL = .3
+        self.type = "RP"
         """Boundary conditions transcription: 'w' -- wall, 'p' -- periodic, 't' -- transmissive, 
         order (natural): left X-b.c., right X-b.c., left Y-b.c., right Y-b.c., left Z-b.c., right Z-b.c."""        
         print("done!")
@@ -32,4 +33,8 @@ class CProblem:
                                                        self.x_min, self.x_max, self.y_min, self.y_max, self.z_min, self.z_max, 
                                                        self.t_min, self.t_max, self.bcs)
         
-toro_test_1_x = ('x', 1., .75, 1., .125, 0., .1, .3, 0., 1., 0., 1., 0., 1., 0., .2, "tttttt")
+toro_test_1_x = ('x',      1.,       .75,      1.,    .125,        0.,      .1, .3, 0., 1., 0., .1, 0., .1, 0., .2,   "tttttt")
+toro_test_2_x = ('x',      1.,       -2.,      .4,      1.,        2.,      .4, .5, 0., 1., 0., 1., 0., 1., 0., .15,  "tttttt")
+toro_test_3_x = ('x',      1.,        0.,   1000.,      1.,        0.,     .01, .5, 0., 1., 0., 1., 0., 1., 0., .012, "tttttt")
+toro_test_4_x = ('x', 5.99924,   19.5975, 460.894, 5.99242,  -6.19633, 46.0950, .4, 0., 1., 0., 1., 0., 1., 0., .035, "tttttt")
+toro_test_5_x = ('x',      1., -19.59745,   1000.,      1., -19.59745,     .01, .8, 0., 1., 0., 1., 0., 1., 0., .012, "tttttt")

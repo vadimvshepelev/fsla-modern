@@ -30,30 +30,24 @@ class CApp:
             if self.t + self.tau > self.problem.t_max:
                 self.tau = self.problem.t_max-self.t
             str_progress_bar = self.output.get_progress_bar(self.t + self.tau)
-            output_str = "\r" + str_progress_bar + " iter=%d tau=%.2f t=%.2f CFL=%.1f" % \
+            output_str = "\r" + str_progress_bar + " iter=%d tau=%.3f t=%.3f CFL=%.1f" % \
                         (self.counter, self.tau, self.t+self.tau, self.problem.CFL)
             sys.stderr.write(output_str)
             self.solver.calc_step(self.field, self.problem, self.tau)
-            if(self.t > .7*self.problem.t_max):
-                output_str_file = output_str + " writing to file..."
-                output_str_file_done = output_str + " writing to file...done!"
-                output_str_file_clr = output_str + "                        "
-                sys.stderr.write(output_str_file)
-                self.output.write_file("test.dat", self.t)  
-                sys.stderr.write(output_str_file_done)
-                sys.stderr.write(output_str_file_clr)
+            #if(self.t > .7*self.problem.t_max):
+            #    output_str_file = output_str + " writing to file..."
+            #    output_str_file_done = output_str + " writing to file...done!"
+            #    output_str_file_clr = output_str + "                        "
+            #    sys.stderr.write(output_str_file)
+            #    self.output.write_file("test.dat", self.t)
+            #    sys.stderr.write(output_str_file_done)
+            #    sys.stderr.write(output_str_file_clr)
             self.t += self.tau            
             self.counter += 1
-            
-        # print(output_str[:-1], end="")    
         print()
         print("done!")
-        self.output.write_file("test.dat", self.t)      
-        
-        
-        
-        
-        
+        self.output.write_file("test.dat", self.t)
+        self.output.write_file_1d_comp(self.solver, "test-1d.dat", self.t)
         
         #print(self.output.get_progress_bar(self.problem.t_max))
         
