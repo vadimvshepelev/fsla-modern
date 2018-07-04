@@ -9,7 +9,8 @@ class COutput:
         self.problem = problem
         self.eos = eos
         self.field = field
-        
+
+
     def write_file(self, file_name, t):
         """Dumps mesh function to Tecplot data file for visualization"""
         NX = self.field.i_max-self.field.i_min

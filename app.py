@@ -6,7 +6,8 @@ import sys, time
 class CApp:
     """Implements the whole calculation process"""
     def __init__(self, problem, eos, field, solver, output):
-        print("Class CApp: Initializing numerical experiment data...", end="")        
+        print("\nStarting '%s' simulation." % problem.name)
+        print("Class CApp: Initializing numerical experiment data...", end="")
         self.problem = problem
         self.eos = eos
         self.field = field
@@ -18,14 +19,11 @@ class CApp:
         print("done!")
 
     def run(self):
-        self.output.write_file("test.dat", self.t)  
+        self.output.write_file(self.problem.name + "-0.dat", self.t)
         init_str = "Calculation in progress:"
         print(init_str)	        
         self.counter = 0
         while(self.t < self.problem.t_max):
-
-            self.output.write_file("test-02.dat", self.t)
-
             self.tau = self.calc_time_step(self.field, self.problem)
             if self.t + self.tau > self.problem.t_max:
                 self.tau = self.problem.t_max-self.t
@@ -34,6 +32,12 @@ class CApp:
                         (self.counter, self.tau, self.t+self.tau, self.problem.CFL)
             sys.stderr.write(output_str)
             self.solver.calc_step(self.field, self.problem, self.tau)
+
+            if self.t > self.problem.t_max/2 and self.t > self.problem.t_max/2 + self.tau:
+                self.output.write_file_1d_comp(self.solver, self.problem.name + "-1d-debug.dat", self.t)
+
+
+
             #if(self.t > .7*self.problem.t_max):
             #    output_str_file = output_str + " writing to file..."
             #    output_str_file_done = output_str + " writing to file...done!"
@@ -46,15 +50,9 @@ class CApp:
             self.counter += 1
         print()
         print("done!")
-        self.output.write_file("test.dat", self.t)
-        self.output.write_file_1d_comp(self.solver, "test-1d.dat", self.t)
-        
-        #print(self.output.get_progress_bar(self.problem.t_max))
-        
-        
-        
-        
-                
+        self.output.write_file(self.problem.name + "-1.dat", self.t)
+        self.output.write_file_1d_comp(self.solver, self.problem.name + "-1d.dat", self.t)
+        return
     
     def calc_time_step(self, field, problem):
         U = field.U
