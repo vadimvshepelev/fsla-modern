@@ -21,10 +21,10 @@ class COutput:
         f.write('VARIABLES="X","Y","Z","ro","ro*u","ro*v","ro*w","ro*E"\n')
         f.write('TITLE="Conservative variables vector field t = ' + str(t) + '"\n')
         f.write('ZONE T="Numerical", I=%d, J=%d, K=%d, F=POINT\n' % (NX, NY, NZ))
-        for i in range(self.field.i_min, self.field.i_max):
+        for k in range(self.field.k_min, self.field.k_max):
             for j in range(self.field.j_min, self.field.j_max):
-                for k in range(self.field.k_min, self.field.k_max):   
-                    f.write("%f %f %f %f %f %f %f %f\n" % (self.field.x_mesh[i], self.field.y_mesh[j], self.field.z_mesh[k], 
+                for i in range(self.field.i_min, self.field.i_max):
+                    f.write("%f %f %f %f %f %f %f %f\n" % (self.field.x_mesh[i], self.field.y_mesh[j], self.field.z_mesh[k],
                             *self.field.U[i][j][k]))
         f.close()        
 

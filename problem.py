@@ -1,3 +1,5 @@
+import config as cfg
+
 class CProblem:
     def __init__(self, eos, name, dir, ro_l, u_l, p_l, ro_r, u_r, p_r, q_0, x_min, x_max, y_min, y_max, z_min, z_max, t_min, t_max, bcs):
         """Конструктор одномерной задачи о распаде разрыва в 3D"""
@@ -22,7 +24,7 @@ class CProblem:
         self.t_min = t_min
         self.t_max = t_max 
         self.bcs = bcs
-        self.CFL = .3
+        self.CFL = cfg.const['CFL']
         self.type = "RP"
         """Boundary conditions transcription: 'w' -- wall, 'p' -- periodic, 't' -- transmissive, 
         order (natural): left X-b.c., right X-b.c., left Y-b.c., right Y-b.c., left Z-b.c., right Z-b.c."""        

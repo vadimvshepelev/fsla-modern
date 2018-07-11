@@ -20,11 +20,14 @@ problem = [problem_module.CProblem(eos, *problem_module.toro_test_1_x),
            problem_module.CProblem(eos, *problem_module.toro_test_3_x),
            problem_module.CProblem(eos, *problem_module.toro_test_4_x),
            problem_module.CProblem(eos, *problem_module.toro_test_5_x)]
-field = [field.CField(problem[0], eos, NX=100, NY=10, NZ=10),
-         field.CField(problem[1], eos, NX=200, NY=10, NZ=10),
-         field.CField(problem[2], eos, NX=100, NY=10, NZ=10),
-         field.CField(problem[3], eos, NX=100, NY=10, NZ=10),
-         field.CField(problem[4], eos, NX=100, NY=10, NZ=10)]
+NX = cfg.const['NX']
+NY = cfg.const['NY']
+NZ = cfg.const['NZ']
+field = [field.CField(problem[0], eos, NX, NY, NZ),
+         field.CField(problem[1], eos, NX, NY, NZ),
+         field.CField(problem[2], eos, NX, NY, NZ),
+         field.CField(problem[3], eos, NX, NY, NZ),
+         field.CField(problem[4], eos, NX, NY, NZ)]
 output = [output_module.COutput(problem[0], eos, field[0]),
           output_module.COutput(problem[1], eos, field[1]),
           output_module.COutput(problem[2], eos, field[2]),
