@@ -52,14 +52,14 @@ class CField:
         k_max = self.k_max
         ro_l = problem.ro_l
         ro_r = problem.ro_r
-        u_l = problem.u_l
-        u_r = problem.u_r
         p_l = problem.p_l
         p_r = problem.p_r                
         for i in range(i_min, i_max):
             for j in range(j_min, j_max):
                 for k in range(k_min, k_max):                    
-                    if problem.dir == 'x':                         
+                    if problem.dir=='x':
+                        u_l = problem.u_l
+                        u_r = problem.u_r
                         v_l = 0.
                         w_l = 0.
                         e_l = eos.gete(ro_l, p_l)
@@ -71,10 +71,41 @@ class CField:
                         if self.x_mesh[i] < problem.q_0 and math.fabs(self.x_mesh[i]-problem.q_0)>self.dx/100.:
                             self.U[i][j][k] = [ro_l, ro_l*u_l, ro_l*v_l, ro_l*w_l, ro_l*E_l]
                         else:
-                            self.U[i][j][k] = [ro_r, ro_r*u_r, ro_r*v_r, ro_r*w_r, ro_r*E_r]                            
+                            self.U[i][j][k] = [ro_r, ro_r*u_r, ro_r*v_r, ro_r*w_r, ro_r*E_r]
+                    elif problem.dir == 'y':
+                        u_l = 0.
+                        v_l = problem.u_l
+                        w_l = 0.
+                        e_l = eos.gete(ro_l, p_l)
+                        E_l = e_l + u_l * u_l / 2. + v_l * v_l / 2. + w_l * w_l / 2.
+                        u_r = 0.
+                        v_r = problem.u_r
+                        w_r = 0.
+                        e_r = eos.gete(ro_r, p_r)
+                        E_r = e_r + u_r * u_r / 2. + v_r * v_r / 2. + w_r * w_r / 2.
+                        if self.y_mesh[j] < problem.q_0 and math.fabs(self.y_mesh[j] - problem.q_0) > self.dy / 100.:
+                            self.U[i][j][k] = [ro_l, ro_l * u_l, ro_l * v_l, ro_l * w_l, ro_l * E_l]
+                        else:
+                            self.U[i][j][k] = [ro_r, ro_r * u_r, ro_r * v_r, ro_r * w_r, ro_r * E_r]
+                    elif problem.dir == 'z':
+                        u_l = 0.
+                        v_l = 0.
+                        w_l = problem.u_l
+                        e_l = eos.gete(ro_l, p_l)
+                        E_l = e_l + u_l * u_l / 2. + v_l * v_l / 2. + w_l * w_l / 2.
+                        u_r = 0.
+                        v_r = 0.
+                        w_r = problem.u_r
+                        e_r = eos.gete(ro_r, p_r)
+                        E_r = e_r + u_r * u_r / 2. + v_r * v_r / 2. + w_r * w_r / 2.
+                        if self.z_mesh[k] < problem.q_0 and math.fabs(self.z_mesh[k] - problem.q_0) > self.dz / 100.:
+                            self.U[i][j][k] = [ro_l, ro_l * u_l, ro_l * v_l, ro_l * w_l, ro_l * E_l]
+                        else:
+                            self.U[i][j][k] = [ro_r, ro_r * u_r, ro_r * v_r, ro_r * w_r, ro_r * E_r]
                     else:
                         print("Error: CField.set_ic(): Sorry, only x-direction case can be considered. Bye!")
                         exit(-1)
+
     def set_bc(self, problem):
         """Sets boundary conditions to the 6 boundary layers of config.const['N_GHOST_CELLS'] fictious cells"""
         bcs = problem.bcs

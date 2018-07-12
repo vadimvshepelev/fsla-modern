@@ -38,7 +38,7 @@ class CApp:
             #if self.t > self.problem.t_max/2 and self.t > self.problem.t_max/2 + self.tau:
             #    self.output.write_file_1d_comp(self.solver, self.problem.name + "-1d-debug.dat", self.t)
 
-            #self.output.write_file_1d_comp(self.solver, self.problem.name + "-1d-debug.dat", self.t)
+            self.output.write_file_1d_comp(self.solver, self.problem.name + "-1d-debug.dat", self.t)
 
             #if(self.t > .7*self.problem.t_max):
             #    output_str_file = output_str + " writing to file..."

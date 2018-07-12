@@ -15,11 +15,29 @@ greeting_str = "================================\n"+ \
                "================================"
 print(greeting_str)
 eos = eos_module.EOSIdeal(GAMMA=1.4)
-problem = [problem_module.CProblem(eos, *problem_module.toro_test_1_x),
-           problem_module.CProblem(eos, *problem_module.toro_test_2_x),
-           problem_module.CProblem(eos, *problem_module.toro_test_3_x),
-           problem_module.CProblem(eos, *problem_module.toro_test_4_x),
-           problem_module.CProblem(eos, *problem_module.toro_test_5_x)]
+# Uncomment for 1d Toro test series
+# Don't forget to change 'config' module options
+
+# x:
+# problem = [problem_module.CProblem(eos, *problem_module.toro_test_1_x),
+#           problem_module.CProblem(eos, *problem_module.toro_test_2_x),
+#           problem_module.CProblem(eos, *problem_module.toro_test_3_x),
+#           problem_module.CProblem(eos, *problem_module.toro_test_4_x),
+#           problem_module.CProblem(eos, *problem_module.toro_test_5_x)]
+
+# y:
+problem = [problem_module.CProblem(eos, *problem_module.toro_test_1_y),
+           problem_module.CProblem(eos, *problem_module.toro_test_2_y),
+           problem_module.CProblem(eos, *problem_module.toro_test_3_y),
+           problem_module.CProblem(eos, *problem_module.toro_test_4_y),
+           problem_module.CProblem(eos, *problem_module.toro_test_5_y)]
+# z:
+# problem = [problem_module.CProblem(eos, *problem_module.toro_test_1_z),
+#           problem_module.CProblem(eos, *problem_module.toro_test_2_z),
+#           problem_module.CProblem(eos, *problem_module.toro_test_3_z),
+#           problem_module.CProblem(eos, *problem_module.toro_test_4_z),
+#           problem_module.CProblem(eos, *problem_module.toro_test_5_z)]
+
 NX = cfg.const['NX']
 NY = cfg.const['NY']
 NZ = cfg.const['NZ']
@@ -34,9 +52,10 @@ output = [output_module.COutput(problem[0], eos, field[0]),
           output_module.COutput(problem[3], eos, field[3]),
           output_module.COutput(problem[4], eos, field[4])]
 solver = exc_module.CExactRiemannSolver(eos)
-#for i in range(5):
+# for i in range(5):
 #    app = app_module.CApp(problem[i], eos, field[i], solver, output[i])
 #    app.run()
 
-app = app_module.CApp(problem[1], eos, field[1], solver, output[1])
+i = 0
+app = app_module.CApp(problem[i], eos, field[i], solver, output[i])
 app.run()
