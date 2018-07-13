@@ -69,8 +69,8 @@ class CExactRiemannSolver:
         for i in range(i_min, i_max):
             for j in range(j_min, j_max):
                 for k in range(k_min, k_max):
-                    U_new[i][j][k] = U[i][j][k] - (tau/dx*(F[i+1][j][k]-F[i][j][k]) -
-                                                   tau/dy*(G[i][j+1][k]-G[i][j][k]) -
+                    U_new[i][j][k] = U[i][j][k] - (tau/dx*(F[i+1][j][k]-F[i][j][k]) +
+                                                   tau/dy*(G[i][j+1][k]-G[i][j][k]) +
                                                    tau/dz*(H[i][j][k+1]-H[i][j][k])) + \
                                                    S[i][j][k]*tau
         for i in range(i_min, i_max):

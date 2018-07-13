@@ -26,17 +26,18 @@ eos = eos_module.EOSIdeal(GAMMA=1.4)
 #           problem_module.CProblem(eos, *problem_module.toro_test_5_x)]
 
 # y:
-problem = [problem_module.CProblem(eos, *problem_module.toro_test_1_y),
-           problem_module.CProblem(eos, *problem_module.toro_test_2_y),
-           problem_module.CProblem(eos, *problem_module.toro_test_3_y),
-           problem_module.CProblem(eos, *problem_module.toro_test_4_y),
-           problem_module.CProblem(eos, *problem_module.toro_test_5_y)]
+#problem = [problem_module.CProblem(eos, *problem_module.toro_test_1_y),
+#           problem_module.CProblem(eos, *problem_module.toro_test_2_y),
+#           problem_module.CProblem(eos, *problem_module.toro_test_3_y),
+#           problem_module.CProblem(eos, *problem_module.toro_test_4_y),
+#           problem_module.CProblem(eos, *problem_module.toro_test_5_y)]
+
 # z:
-# problem = [problem_module.CProblem(eos, *problem_module.toro_test_1_z),
-#           problem_module.CProblem(eos, *problem_module.toro_test_2_z),
-#           problem_module.CProblem(eos, *problem_module.toro_test_3_z),
-#           problem_module.CProblem(eos, *problem_module.toro_test_4_z),
-#           problem_module.CProblem(eos, *problem_module.toro_test_5_z)]
+problem = [problem_module.CProblem(eos, *problem_module.toro_test_1_z),
+           problem_module.CProblem(eos, *problem_module.toro_test_2_z),
+           problem_module.CProblem(eos, *problem_module.toro_test_3_z),
+           problem_module.CProblem(eos, *problem_module.toro_test_4_z),
+           problem_module.CProblem(eos, *problem_module.toro_test_5_z)]
 
 NX = cfg.const['NX']
 NY = cfg.const['NY']
@@ -56,6 +57,6 @@ solver = exc_module.CExactRiemannSolver(eos)
 #    app = app_module.CApp(problem[i], eos, field[i], solver, output[i])
 #    app.run()
 
-i = 0
+i = 4
 app = app_module.CApp(problem[i], eos, field[i], solver, output[i])
 app.run()
