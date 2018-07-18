@@ -109,6 +109,9 @@ class CField:
         elif problem.type == "RTI":
             ro_down = problem.ro_down
             ro_up = problem.ro_up
+            u = 0.
+            v = 0.
+            w = 0.
             p_0 = problem.p_0
             g = problem.g
             q_0 = problem.q_0
@@ -116,57 +119,54 @@ class CField:
             for i in range(i_min, i_max):
                 for j in range(j_min, j_max):
                     for k in range(k_min, k_max):
-                        if problem.dir=='x':
-                                x = x_mesh[i]
-                                p = p0 + ro_down*g*...
-
-
-                               #... See fsla2d, then implement
-
-
-                            e_l = eos.gete(ro_l, p_l)
-                            E_l = e_l + u_l*u_l/2. + v_l*v_l/2. + w_l*w_l/2.
-                            v_r = 0.
-                            w_r = 0.
-                            e_r = eos.gete(ro_r, p_r)
-                            E_r = e_r + u_r*u_r/2. + v_r*v_r/2. + w_r*w_r/2.
-                            if self.x_mesh[i] < problem.q_0 and math.fabs(self.x_mesh[i]-problem.q_0)>self.dx/100.:
-                                self.U[i][j][k] = [ro_l, ro_l*u_l, ro_l*v_l, ro_l*w_l, ro_l*E_l]
+                        x = self.dx * (.5 + x_mesh[i])
+                        y = self.dy * (.5 + y_mesh[j])
+                        z = self.dz * (.5 + z_mesh[k])
+                        if problem.dir == 'x':
+                            q = x
+                            if x < q_0:
+                                ro = ro_down
                             else:
-                                self.U[i][j][k] = [ro_r, ro_r*u_r, ro_r*v_r, ro_r*w_r, ro_r*E_r]
+                                ro = ro_up
+                        if problem.dir == 'y':
+                            q = y
+                            if y < q_0:
+                                ro = ro_down
+                            else:
+                                ro = ro_up
+                        if problem.dir == 'z':
+                            q = y
+                            if y < q_0:
+                                ro = ro_down
+                            else:
+                                ro = ro_up
+                            p = p_0 + ro*g*(q - q_0)
+                            e = eos.gete(ro, p)
+                            E = e + .5*(0.*0. + 0.*0. + 0.*0.)
+                            self.U[i][j][k] = [ro, ro*u, ro*v, ro*w, ro*E]
+            # Apply initial disturbance
+            # Uncomment the variant you prefer
+            # Yalinewich 2D disturbance
+            PI = 3.14159
+            w_0 = 0.0025
+            for i in range(i_min, i_max):
+                for j in range(j_min, j_max):
+                    for k in range(k_min, k_max):
+                        x = self.dx * (.5 + self.x_mesh[i])
+                        y = self.dy * (.5 + self.y_mesh[j])
+                        z = self.dz * (.5 + self.z_mesh[k])
+                        if problem.dir == 'x':
+                            self.U[i][j][k][3] = 0.
+                            self.U[i][j][k][1] = self.U[i][j][k][0]*w_0*\
+                                                 (1. - math.cos(4.*PI*z) * (1.-math.cos(4.*PI*x/3.)))
                         elif problem.dir == 'y':
-                            u_l = 0.
-                            v_l = problem.u_l
-                            w_l = 0.
-                            e_l = eos.gete(ro_l, p_l)
-                            E_l = e_l + u_l * u_l / 2. + v_l * v_l / 2. + w_l * w_l / 2.
-                            u_r = 0.
-                            v_r = problem.u_r
-                            w_r = 0.
-                            e_r = eos.gete(ro_r, p_r)
-                            E_r = e_r + u_r * u_r / 2. + v_r * v_r / 2. + w_r * w_r / 2.
-                            if self.y_mesh[j] < problem.q_0 and math.fabs(self.y_mesh[j] - problem.q_0) > self.dy / 100.:
-                                self.U[i][j][k] = [ro_l, ro_l * u_l, ro_l * v_l, ro_l * w_l, ro_l * E_l]
-                            else:
-                                self.U[i][j][k] = [ro_r, ro_r * u_r, ro_r * v_r, ro_r * w_r, ro_r * E_r]
+                            self.U[i][j][k][1] = 0.
+                            self.U[i][j][k][2] = self.U[i][j][k][0]*w_0*\
+                                                 (1. - math.cos(4.*PI*x) * (1.-math.cos(4.*PI*y/3.)))
                         elif problem.dir == 'z':
-                            u_l = 0.
-                            v_l = 0.
-                            w_l = problem.u_l
-                            e_l = eos.gete(ro_l, p_l)
-                            E_l = e_l + u_l * u_l / 2. + v_l * v_l / 2. + w_l * w_l / 2.
-                            u_r = 0.
-                            v_r = 0.
-                            w_r = problem.u_r
-                            e_r = eos.gete(ro_r, p_r)
-                            E_r = e_r + u_r * u_r / 2. + v_r * v_r / 2. + w_r * w_r / 2.
-                            if self.z_mesh[k] < problem.q_0 and math.fabs(self.z_mesh[k] - problem.q_0) > self.dz / 100.:
-                                self.U[i][j][k] = [ro_l, ro_l * u_l, ro_l * v_l, ro_l * w_l, ro_l * E_l]
-                            else:
-                                self.U[i][j][k] = [ro_r, ro_r * u_r, ro_r * v_r, ro_r * w_r, ro_r * E_r]
-                        else:
-                            print("Error: CField.set_ic(): Sorry, only x-direction case can be considered. Bye!")
-                            exit(-1)
+                            self.U[i][j][k][2] = 0.
+                            self.U[i][j][k][3] = self.U[i][j][k][0]*w_0*\
+                                                 (1. - math.cos(4.*PI*y) * (1.-math.cos(4.*PI*z/3.)))
         else:
             print("Error: CField.set_ic(): unknown problem type! Only 1d-PRs and 2d-RTIs allowed. Bye!")
             exit(-1)
@@ -181,31 +181,66 @@ class CField:
             for j in range(self.j_min, self.j_max):
                 for k in range(self.k_min, self.k_max): 
                     if bcs[0] == 't':   
-                        self.U[i][j][k] = self.U[self.i_min][j][k]                        
+                        self.U[i][j][k] = self.U[self.i_min][j][k]
+                    elif bcs[0] == 'w':
+                        for num in [0, 2, 3, 4]:
+                            self.U[i][j][k][num] = self.U[self.i_min + n_bound - i][j][k][num]
+                        for num in [1]:
+                            self.U[i][j][k][num] = -self.U[self.i_min + n_bound - i][j][k][num]
+                    else:
+                        print("Errof field.set_ics(): only wall-type and transmissive boundaries supported! Bye!")
         # Right X-b.c.
         for i in range(self.i_max, self.i_max+n_bound):
             for j in range(self.j_min, self.j_max):
                 for k in range(self.k_min, self.k_max): 
                     if bcs[1] == 't':
-                        self.U[i][j][k] = self.U[self.i_max-1][j][k]              
+                        self.U[i][j][k] = self.U[self.i_max-1][j][k]
+                    elif bcs[1] == 'w':
+                        for num in [0, 2, 3, 4]:
+                            self.U[i][j][k][num] = self.U[self.i_max - n_bound + i][j][k][num]
+                        for num in [1]:
+                            self.U[i][j][k][num] = -self.U[self.i_max - n_bound + i][j][k][num]
+                    else:
+                        print("Error field.set_ics(): only wall-type and transmissive boundaries supported! Bye!")
         # Left Y-b.c.
         for i in range(0, self.i_max+n_bound):
             for j in range(0, self.j_min):
                 for k in range(self.k_min, self.k_max): 
                     if bcs[2] == 't':
-                        self.U[i][j][k] = self.U[i][self.j_min][k]                
+                        self.U[i][j][k] = self.U[i][self.j_min][k]
+                    elif bcs[2] == 'w':
+                        for num in [0, 1, 3, 4]:
+                            self.U[i][j][k][num] = self.U[i][self.j_min + n_bound - j][k][num]
+                        for num in [2]:
+                            self.U[i][j][k][num] = -self.U[i][self.j_min + n_bound - j][k][num]
+                    else:
+                        print("Error field.set_ics(): only wall-type and transmissive boundaries supported! Bye!")
         # Right Y-b.c.
         for i in range(0, self.i_max+n_bound):
             for j in range(self.j_max, self.j_max+n_bound):
                 for k in range(self.k_min, self.k_max): 
                     if bcs[3] == 't':
-                        self.U[i][j][k] = self.U[i][self.j_max-1][k]                
+                        self.U[i][j][k] = self.U[i][self.j_max-1][k]
+                    elif bcs[3] == 'w':
+                        for num in [0, 1, 3, 4]:
+                            self.U[i][j][k][num] = self.U[i][self.j_max - n_bound + j][k][num]
+                        for num in [1]:
+                            self.U[i][j][k][num] = -self.U[i][self.j_max - n_bound + j][k][num]
+                    else:
+                        print("Error field.set_ics(): only wall-type and transmissive boundaries supported! Bye!")
         # Left Z-b.c.
         for i in range(0, self.i_max+n_bound):
             for j in range(0, self.j_max+n_bound):
                 for k in range(0, self.k_min): 
                     if bcs[4] == 't':
                         self.U[i][j][k] = self.U[i][j][self.k_min]
+                    elif bcs[4] == 'w':
+                        for num in [0, 1, 2, 4]:
+                            self.U[i][j][k][num] = self.U[i][j][self.k_min + n_bound - k][num]
+                        for num in [3]:
+                            self.U[i][j][k][num] = -self.U[i][j][self.k_min + n_bound - k][num]
+                    else:
+                        print("Error field.set_ics(): only wall-type and transmissive boundaries supported! Bye!")
         # Right Z-b.c.
         for i in range(0, self.i_max+n_bound):
             for j in range(0, self.j_max+n_bound):
