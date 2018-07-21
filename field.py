@@ -107,6 +107,7 @@ class CField:
                             print("Error: CField.set_ic(): Sorry, only x-direction case can be considered. Bye!")
                             exit(-1)
         elif problem.type == "RTI":
+            U = self.U
             ro_down = problem.ro_down
             ro_up = problem.ro_up
             u = 0.
@@ -119,31 +120,23 @@ class CField:
             for i in range(i_min, i_max):
                 for j in range(j_min, j_max):
                     for k in range(k_min, k_max):
-                        x = self.dx * (.5 + x_mesh[i])
-                        y = self.dy * (.5 + y_mesh[j])
-                        z = self.dz * (.5 + z_mesh[k])
+                        x = .5*self.dx + self.x_mesh[i]
+                        y = .5*self.dy + self.y_mesh[j]
+                        z = .5*self.dz + self.z_mesh[k]
                         if problem.dir == 'x':
                             q = x
-                            if x < q_0:
-                                ro = ro_down
-                            else:
-                                ro = ro_up
-                        if problem.dir == 'y':
+                        elif problem.dir == 'y':
                             q = y
-                            if y < q_0:
-                                ro = ro_down
-                            else:
-                                ro = ro_up
-                        if problem.dir == 'z':
-                            q = y
-                            if y < q_0:
-                                ro = ro_down
-                            else:
-                                ro = ro_up
-                            p = p_0 + ro*g*(q - q_0)
-                            e = eos.gete(ro, p)
-                            E = e + .5*(0.*0. + 0.*0. + 0.*0.)
-                            self.U[i][j][k] = [ro, ro*u, ro*v, ro*w, ro*E]
+                        else:
+                            q = z
+                        if q < q_0:
+                            ro = ro_down
+                        else:
+                            ro = ro_up
+                        p = p_0 + ro*g*(q - q_0)
+                        e = eos.gete(ro, p)
+                        E = e + .5*(0.*0. + 0.*0. + 0.*0.)
+                        self.U[i][j][k] = [ro, ro*u, ro*v, ro*w, ro*E]
             # Apply initial disturbance
             # Uncomment the variant you prefer
             # Yalinewich 2D disturbance
@@ -157,20 +150,19 @@ class CField:
                         z = self.dz * (.5 + self.z_mesh[k])
                         if problem.dir == 'x':
                             self.U[i][j][k][3] = 0.
-                            self.U[i][j][k][1] = self.U[i][j][k][0]*w_0*\
-                                                 (1. - math.cos(4.*PI*z) * (1.-math.cos(4.*PI*x/3.)))
+                            self.U[i][j][k][1] = self.U[i][j][k][0]*w_0* \
+                                                    (1. - math.cos(4.*PI*z)) * (1.-math.cos(4.*PI*x/3.))
                         elif problem.dir == 'y':
-                            self.U[i][j][k][1] = 0.
-                            self.U[i][j][k][2] = self.U[i][j][k][0]*w_0*\
-                                                 (1. - math.cos(4.*PI*x) * (1.-math.cos(4.*PI*y/3.)))
+                            U[i][j][k][1] = 0.
+                            U[i][j][k][2] = U[i][j][k][0]*w_0*(1. - math.cos(4.*PI*x)) * (1.-math.cos(4.*PI*y/3.))
                         elif problem.dir == 'z':
                             self.U[i][j][k][2] = 0.
-                            self.U[i][j][k][3] = self.U[i][j][k][0]*w_0*\
-                                                 (1. - math.cos(4.*PI*y) * (1.-math.cos(4.*PI*z/3.)))
+                            self.U[i][j][k][3] = self.U[i][j][k][0]*w_0* \
+                                                    (1. - math.cos(4.*PI*y)) * (1.-math.cos(4.*PI*z/3.))
         else:
             print("Error: CField.set_ic(): unknown problem type! Only 1d-PRs and 2d-RTIs allowed. Bye!")
             exit(-1)
-
+        return
 
     def set_bc(self, problem):
         """Sets boundary conditions to the 6 boundary layers of config.const['N_GHOST_CELLS'] fictious cells"""
@@ -183,10 +175,10 @@ class CField:
                     if bcs[0] == 't':   
                         self.U[i][j][k] = self.U[self.i_min][j][k]
                     elif bcs[0] == 'w':
-                        for num in [0, 2, 3, 4]:
-                            self.U[i][j][k][num] = self.U[self.i_min + n_bound - i][j][k][num]
+                        for num in [0, 2, 3, 4]:  # 0 -> 3, 1 -> 2, i_min-1 -> i_min, i_min-2 -> i_min+1
+                            self.U[i][j][k][num] = self.U[self.i_min + (self.i_min - i - 1)][j][k][num]
                         for num in [1]:
-                            self.U[i][j][k][num] = -self.U[self.i_min + n_bound - i][j][k][num]
+                            self.U[i][j][k][num] = - self.U[self.i_min + (self.i_min - i - 1)][j][k][num]
                     else:
                         print("Errof field.set_ics(): only wall-type and transmissive boundaries supported! Bye!")
         # Right X-b.c.
@@ -196,10 +188,10 @@ class CField:
                     if bcs[1] == 't':
                         self.U[i][j][k] = self.U[self.i_max-1][j][k]
                     elif bcs[1] == 'w':
-                        for num in [0, 2, 3, 4]:
-                            self.U[i][j][k][num] = self.U[self.i_max - n_bound + i][j][k][num]
+                        for num in [0, 2, 3, 4]:   # i_max -> i_max-1 , i_max+1-> i_max-2
+                            self.U[i][j][k][num] = self.U[self.i_max - (i - self.i_max + 1)][j][k][num]
                         for num in [1]:
-                            self.U[i][j][k][num] = -self.U[self.i_max - n_bound + i][j][k][num]
+                            self.U[i][j][k][num] = - self.U[self.i_max - (i - self.i_max + 1)][j][k][num]
                     else:
                         print("Error field.set_ics(): only wall-type and transmissive boundaries supported! Bye!")
         # Left Y-b.c.
@@ -210,9 +202,9 @@ class CField:
                         self.U[i][j][k] = self.U[i][self.j_min][k]
                     elif bcs[2] == 'w':
                         for num in [0, 1, 3, 4]:
-                            self.U[i][j][k][num] = self.U[i][self.j_min + n_bound - j][k][num]
+                            self.U[i][j][k][num] = self.U[i][self.j_min + (self.j_min - j - 1)][k][num]
                         for num in [2]:
-                            self.U[i][j][k][num] = -self.U[i][self.j_min + n_bound - j][k][num]
+                            self.U[i][j][k][num] = - self.U[i][self.j_min + (self.j_min - j - 1)][k][num]
                     else:
                         print("Error field.set_ics(): only wall-type and transmissive boundaries supported! Bye!")
         # Right Y-b.c.
@@ -223,9 +215,9 @@ class CField:
                         self.U[i][j][k] = self.U[i][self.j_max-1][k]
                     elif bcs[3] == 'w':
                         for num in [0, 1, 3, 4]:
-                            self.U[i][j][k][num] = self.U[i][self.j_max - n_bound + j][k][num]
-                        for num in [1]:
-                            self.U[i][j][k][num] = -self.U[i][self.j_max - n_bound + j][k][num]
+                            self.U[i][j][k][num] = self.U[i][self.j_max - (j - self.j_max + 1)][k][num]
+                        for num in [2]:
+                            self.U[i][j][k][num] = -self.U[i][self.j_max - (j - self.j_max + 1)][k][num]
                     else:
                         print("Error field.set_ics(): only wall-type and transmissive boundaries supported! Bye!")
         # Left Z-b.c.
@@ -236,9 +228,9 @@ class CField:
                         self.U[i][j][k] = self.U[i][j][self.k_min]
                     elif bcs[4] == 'w':
                         for num in [0, 1, 2, 4]:
-                            self.U[i][j][k][num] = self.U[i][j][self.k_min + n_bound - k][num]
+                            self.U[i][j][k][num] = self.U[i][j][self.k_min + (self.k_min - k - 1)][num]
                         for num in [3]:
-                            self.U[i][j][k][num] = -self.U[i][j][self.k_min + n_bound - k][num]
+                            self.U[i][j][k][num] = - self.U[i][j][self.k_min + (self.k_min - k - 1)][num]
                     else:
                         print("Error field.set_ics(): only wall-type and transmissive boundaries supported! Bye!")
         # Right Z-b.c.
@@ -247,7 +239,14 @@ class CField:
                 for k in range(self.k_max, self.k_max+n_bound):
                     if bcs[5] == 't':
                         self.U[i][j][k] = self.U[i][j][self.k_max-1]
-    
+                    elif bcs[5] == 'w':
+                        for num in [0, 1, 2, 4]:
+                            self.U[i][j][k][num] = self.U[i][j][self.k_max - (k - self.k_max + 1)][num]
+                        for num in [3]:
+                            self.U[i][j][k][num] = - self.U[i][j][self.k_max - (k - self.k_max + 1)][num]
+                    else:
+                        print("Error field.set_ics(): only wall-type and transmissive boundaries supported! Bye!")
+
                              
         
                             

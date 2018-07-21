@@ -23,7 +23,7 @@ class CApp:
         init_str = "Calculation in progress:"
         print(init_str)	        
         self.counter = 0
-        while(self.t < self.problem.t_max):
+        while self.t < self.problem.t_max:
             self.tau = self.calc_time_step(self.field, self.problem)
             if self.counter < 5:
                 self.tau *= .2
