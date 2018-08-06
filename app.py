@@ -51,7 +51,7 @@ class CApp:
             self.t += self.tau            
             self.counter += 1
 
-            self.output.write_file(self.problem.name + "-int.dat", self.t)
+            # self.output.write_file(self.problem.name + "-int.dat", self.t)
 
 
 
