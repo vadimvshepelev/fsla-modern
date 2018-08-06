@@ -50,10 +50,15 @@ class CApp:
             #    sys.stderr.write(output_str_file_clr)
             self.t += self.tau            
             self.counter += 1
+
+            self.output.write_file(self.problem.name + "-int.dat", self.t)
+
+
+
         print()
         print("done!")
         self.output.write_file(self.problem.name + "-1.dat", self.t)
-        self.output.write_file_1d_comp(self.solver, self.problem.name + "-1d.dat", self.t)
+        # self.output.write_file_1d_comp(self.solver, self.problem.name + "-1d.dat", self.t)
         return
     
     def calc_time_step(self, field, problem):

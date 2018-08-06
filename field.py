@@ -145,9 +145,12 @@ class CField:
             for i in range(i_min, i_max):
                 for j in range(j_min, j_max):
                     for k in range(k_min, k_max):
-                        x = self.dx * (.5 + self.x_mesh[i])
-                        y = self.dy * (.5 + self.y_mesh[j])
-                        z = self.dz * (.5 + self.z_mesh[k])
+                        # x = self.dx * (.5 + self.x_mesh[i])
+                        # y = self.dy * (.5 + self.y_mesh[j])
+                        # z = self.dz * (.5 + self.z_mesh[k])
+                        x = .5 * self.dx + self.x_mesh[i]
+                        y = .5 * self.dy + self.y_mesh[j]
+                        z = .5 * self.dz + self.z_mesh[k]
                         if problem.dir == 'x':
                             self.U[i][j][k][3] = 0.
                             self.U[i][j][k][1] = self.U[i][j][k][0]*w_0* \

@@ -56,7 +56,10 @@ class CExactRiemannSolver:
         dx = field.dx
         dy = field.dy
         dz = field.dz
-        g = 0 # ускорение
+        if problem.type == 'RTI':
+            g = problem.g
+        else:
+            g = 0.
         # Calculating fluxes
         for i in range(i_min, i_max+1):
             for j in range(j_min, j_max+1):
@@ -64,7 +67,15 @@ class CExactRiemannSolver:
                     F[i][j][k] = self.calc_F(U[i-1][j][k], U[i][j][k])
                     G[i][j][k] = self.calc_G(U[i][j-1][k], U[i][j][k])
                     H[i][j][k] = self.calc_H(U[i][j][k-1], U[i][j][k])
-                    S[i][j][k] = 0.
+                    if problem.type == "RTI":
+                        if problem.dir == 'x':
+                            S[i][j][k] = [0., U[i][j][k][0]*g,              0.,              0., U[i][j][k][1]*g]
+                        elif problem.dir == 'y':
+                            S[i][j][k] = [0.,              0., U[i][j][k][0]*g,              0., U[i][j][k][2]*g]
+                        else:
+                            S[i][j][k] = [0.,              0.,              0., U[i][j][k][0]*g, U[i][j][k][3]*g]
+                    else:
+                        S[i][j][k] = [0., 0., 0., 0., 0.]
         # Calculating new time-layer variables
         for i in range(i_min, i_max):
             for j in range(j_min, j_max):
