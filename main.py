@@ -63,7 +63,8 @@ NY = cfg.const['NY']
 NZ = cfg.const['NZ']
 solver = exc_module.CExactRiemannSolver(eos)
 field = field_module.CField(problem_RTI, eos, NX, NY, NZ)
-output = output_module.COutput(problem_RTI, eos, field)
+tt_list = [float(i) for i in range(16)]
+output = output_module.COutput(problem_RTI, eos, field, tt_list)
 app = app_module.CApp(problem_RTI, eos, field, solver, output)
 app.run()
 

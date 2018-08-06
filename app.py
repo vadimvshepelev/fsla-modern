@@ -19,7 +19,8 @@ class CApp:
         print("done!")
 
     def run(self):
-        self.output.write_file(self.problem.name + "-0.dat", self.t)
+        # self.output.write_file(self.problem.name + "-0.dat", self.t)
+        self.output.manage_output(self.t)
         init_str = "Calculation in progress:"
         print(init_str)	        
         self.counter = 0
@@ -48,16 +49,13 @@ class CApp:
             #    self.output.write_file("test.dat", self.t)
             #    sys.stderr.write(output_str_file_done)
             #    sys.stderr.write(output_str_file_clr)
-            self.t += self.tau            
+            self.t += self.tau
             self.counter += 1
-
             # self.output.write_file(self.problem.name + "-int.dat", self.t)
-
-
-
+            self.output.manage_output(self.t)
         print()
         print("done!")
-        self.output.write_file(self.problem.name + "-1.dat", self.t)
+        self.output.write_file(self.problem.name + "-N.dat", self.t)
         # self.output.write_file_1d_comp(self.solver, self.problem.name + "-1d.dat", self.t)
         return
     
@@ -93,7 +91,10 @@ class CApp:
                     try:
                         c = self.eos.getc(ro, e)
                     except ValueError:
-                        print("\nError: CApp::calc_time_step(): negative pressure/density in the node i=%d j=%d k=%d" % (i, j, k))
+                        error_file_name = self.problem.name + "-error-dump.dat"
+                        print("\nError: CApp.calc_time_step(): negative pressure/density in the node i=%d j=%d k=%d"
+                              "Mesh functions written to file %s" % (i, j, k, error_file_name))
+                        self.output.write_file(error_file_name, self.t)
                         exit(1)
 #                   tau_new = CFL*1./3*(dx+dy+dz)/с
                     tau_new = CFL*min(dx/(math.fabs(u)+c), dy/(math.fabs(v)+c), dz/(math.fabs(w)+c))

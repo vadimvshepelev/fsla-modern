@@ -4,12 +4,13 @@ import config as cfg
 
 class COutput:
     """Implements some service functions for file and screen output"""
-    def __init__(self, problem, eos, field):
+    def __init__(self, problem, eos, field, tt_list):
         self.field = field
         self.problem = problem
         self.eos = eos
         self.field = field
-
+        self.tt_list = tt_list
+        self.write_counter = 0
 
     def write_file(self, file_name, t):
         """Dumps mesh function to Tecplot data file for visualization"""
@@ -26,7 +27,7 @@ class COutput:
                 for i in range(self.field.i_min, self.field.i_max):
                     f.write("%f %f %f %f %f %f %f %f\n" % (self.field.x_mesh[i], self.field.y_mesh[j], self.field.z_mesh[k],
                             *self.field.U[i][j][k]))
-        f.close()        
+        f.close()
 
 
     def write_file_1d_comp(self, solver, file_name, t):
@@ -133,6 +134,18 @@ class COutput:
                 output_string += ' '
         output_string += "] %d" % int(progress_rate*100) + '%'
         return output_string
-        
-    
+
+    def manage_output(self, t):
+        """"The function so responsible for regular file output according to the timetable"""
+        if t >= self.tt_list[0]:
+            if not self.tt_list:
+                print("Error output.manage_output(): empty output timetable list, check your output timetable.")
+                exit(1)
+            output_file_name = self.problem.name + '-' + str(self.write_counter) + '.dat'
+            print("Class COutput: writing data to file '%s'..." % output_file_name, end='')
+            self.write_file(output_file_name, t)
+            print("done!")
+            self.tt_list.pop(0)
+            self.write_counter += 1
+
 

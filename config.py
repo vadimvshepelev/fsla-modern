@@ -4,7 +4,7 @@
 const = {"CONS_VECT_N_SIZE": 5,
          "N_GHOST_CELLS": 2,
          "OUTPUT_DIR": "./output/",
-         "CFL": .4,
+         "CFL": .3,
          "NX": 48,
          "NY": 144,
          "NZ": 10}
