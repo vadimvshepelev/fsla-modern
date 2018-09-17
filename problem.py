@@ -1,12 +1,14 @@
 import config as cfg
 
+
 class CProblem:
-    def __init__(self, name=None, dir=None, ro_l=None, u_l=None, p_l=None, ro_r=None, u_r=None, p_r=None, q_0=None,
+    def __init__(self, eos=None,  name=None, dir=None, ro_l=None, u_l=None, p_l=None, ro_r=None, u_r=None, p_r=None, q_0=None,
                  x_min=None, x_max=None, y_min=None, y_max=None, z_min=None, z_max=None, t_min=None, t_max=None,
                  bcs=None):
         """Конструктор одномерной задачи о распаде разрыва в 3D"""
         print("Class CProblem: ", end="")
         print("Initializing...", end="")
+        self.eos = eos
         self.name = name
         self.type = "RP"
         self.dir = dir

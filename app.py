@@ -56,7 +56,7 @@ class CApp:
         print()
         print("done!")
         self.output.write_file(self.problem.name + "-N.dat", self.t)
-        # self.output.write_file_1d_comp(self.solver, self.problem.name + "-1d.dat", self.t)
+        self.output.write_file_1d_comp(self.solver, self.problem.name + "-1d.dat", self.t)
         return
     
     def calc_time_step(self, field, problem):
