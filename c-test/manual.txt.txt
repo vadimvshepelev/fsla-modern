@@ -1,0 +1,3 @@
+gcc -shared  -o hello.so -fPIC hello.c
+
+для компиляции shared-библиотеки

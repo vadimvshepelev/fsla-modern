@@ -18,6 +18,37 @@ NX = cfg.const['NX']
 NY = cfg.const['NY']
 NZ = cfg.const['NZ']
 
+
+# Test area
+#####################################
+
+import ctypes
+
+from ctypes import *
+from ctypes.util import find_library
+
+print(windll.kernel32)
+print(cdll.msvcrt)
+libc = cdll.msvcrt
+
+hello_ctypes = ctypes.CDLL('./c-test/hello.so').hello
+hello_ctypes.restype = ctypes.c_int
+i = hello_ctypes()
+print("It returned", i)
+
+
+
+print("!!! done !!!")
+exit(1)
+
+
+
+
+
+#####################################
+
+
+
 # Uncomment for 1d Toro test series
 # Don't forget to change 'config' module options
 # x:
