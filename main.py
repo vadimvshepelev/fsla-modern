@@ -1,6 +1,7 @@
 # 'main.py' test program
 
 import numpy as np
+import timeit
 
 import config as cfg
 import problem as problem_module
@@ -19,32 +20,15 @@ NY = cfg.const['NY']
 NZ = cfg.const['NZ']
 
 
-# Test area
+# 'ctypes' test area
 #####################################
-
-import ctypes
-
-from ctypes import *
-from ctypes.util import find_library
-
-print(windll.kernel32)
-print(cdll.msvcrt)
-libc = cdll.msvcrt
-
-hello_ctypes = ctypes.CDLL('./c-test/hello.so').hello
-hello_ctypes.restype = ctypes.c_int
-i = hello_ctypes()
-print("It returned", i)
-
-
-
-print("!!! done !!!")
-exit(1)
-
-
-
-
-
+#import ctypes
+#hello_ctypes = ctypes.CDLL('./c-test/hello.so').hello
+#hello_ctypes.restype = ctypes.c_int
+#i = hello_ctypes()
+#print("It returned", i)
+#print("!!! done !!!")
+#exit(1)
 #####################################
 
 
@@ -82,14 +66,18 @@ problem = [problem_module.CProblem(eos, *problem_module.toro_test_1_x),
 #          output_module.COutput(problem[3], eos, field[3]),
 #          output_module.COutput(problem[4], eos, field[4])]
 
-for i in range(5):
+
+t1 = timeit.default_timer()
+for i in range(1):
     field = field_module.CField(problem[i], eos, NX, NY, NZ)
     solver = exc_module.CExactRiemannSolver(eos)
     tt_list = [problem[i].t_min, problem[i].t_max]
     output = output_module.COutput(problem[0], eos, field, tt_list)
     app = app_module.CApp(problem[i], eos, field, solver, output)
     app.run()
+t2 = timeit.default_timer()
 
+print("Time: ", t2-t1)
 
 # Uncomment for 2D-RTI test
 # solver = exc_module.CExactRiemannSolver(eos)
